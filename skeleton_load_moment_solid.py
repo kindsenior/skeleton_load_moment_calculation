@@ -125,6 +125,16 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
         print B_theta
         print ""
 
+        # calc max_tau at current pose
+        max_tau_theta = (max_tau/abs(A_theta.dot(A_theta.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
+        # tau convex hull H->V
+        A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
+        b = np.vstack([max_tau_theta[:,np.newaxis],max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
+        inmat, poly, retmat = h2v(A,b)
+        # print poly
+        print retmat
+        tau_vertices = np.array(retmat)[:,1:] # u_k^T
+
         # convert to tau_tilde V->H
         tau_tilde_vertices = tau_vertices.dot(B_theta.T) # u_k^~T
         b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
@@ -189,18 +199,15 @@ fig = plt.figure(figsize=(20.0,20.0))
 # ax = fig.add_subplot(111, projection='3d')
 ax = fig.gca(projection='3d')
 
-# tau convex hull H->V
 max_tau = np.array([max_tau_list[joint_idx] for joint_idx in joint_order])[:,np.newaxis] # from root order
 assert len(max_tau) == num_joints
-A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
-b = np.vstack([max_tau,max_tau]) # min_tau = - max_tau -> -min_tau = max_tau
-mat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
-mat.rep_type = cdd.RepType.INEQUALITY
-poly = cdd.Polyhedron(mat)
-print poly
-ext = poly.get_generators()
-print ext
-tau_vertices = np.array(ext)[:,1:] # u_k^T
+# # tau convex hull H->V
+# A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
+# b = np.vstack([max_tau,max_tau]) # min_tau = - max_tau -> -min_tau = max_tau
+# inmat, poly, retmat = h2v(A,b)
+# print poly
+# print retmat
+# tau_vertices = np.array(retmat)[:,1:] # u_k^T
 
 # ax.set_xlabel("Joint0[Nm]")
 # ax.set_ylabel("Joint1[Nm]")
