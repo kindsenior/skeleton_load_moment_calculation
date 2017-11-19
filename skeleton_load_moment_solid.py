@@ -124,7 +124,7 @@ def swipe_joint_range(division_num = None, dowait = None, tm = None):
     swipe_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num = division_num, dowait = dowait ,tm = tm)
 
 
-def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None):
+def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None):
 # def swipe_joint_range(child_joint_structure, rot_list, local_axis_list):
     # child_joint_indices = [idx for l in child_joint_structure for idx in l]
     print "swipe_joint_range()"
@@ -132,48 +132,57 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
     # print child_joint_indices
     print ""
 
-    turn = A_theta.shape[0] - len(child_joint_indices)
-    if len(child_joint_indices) > 1:
-        child_joint_idx = child_joint_indices[1] # x/y/z = 0/1/2
-        child_joint_range = joint_range_list[child_joint_idx]
-        child_joint_axis = np.identity(3)[:,child_joint_idx]
-        for child_joint_angle in np.linspace(child_joint_range[0], child_joint_range[1], division_num):
-            print joint_name_list[child_joint_idx], " is ", child_joint_angle, " [deg]"
-            rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
-            max_moment_vec, min_moment_vec = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm)
+    if escape is None: escape = False
 
-        return max_moment_vec, min_moment_vec
+    if escape:
+        return max_moment_vec, min_moment_vec, escape
     else:
-        rot_list[-1] = np.identity(3) # turn = 3-1
-        for i in range(A_theta.shape[0]):
-            group_last_axis = [ joint_group for joint_group in joint_structure for joint_axis in joint_group if joint_axis == joint_order[i] ][0][-1]
-            A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
-            # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i]).T[0]
-        B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S)
+        turn = A_theta.shape[0] - len(child_joint_indices)
+        if len(child_joint_indices) > 1:
+            child_joint_idx = child_joint_indices[1] # x/y/z = 0/1/2
+            child_joint_range = joint_range_list[child_joint_idx]
+            child_joint_axis = np.identity(3)[:,child_joint_idx]
+            for child_joint_angle in np.linspace(child_joint_range[0], child_joint_range[1], division_num):
+                ax.clear()
+                print joint_name_list[child_joint_idx], " is ", child_joint_angle, " [deg]"
+                ax.text2D(0.02,0.07+0.005*child_joint_idx,joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
+                rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
+                max_moment_vec, min_moment_vec, escape = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape)
 
-        print "rot_list="
-        pprint.pprint(rot_list)
-        print "A_theta="
-        print A_theta
-        print "B_theta="
-        print B_theta
-        print ""
-
-        n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta)
-
-        max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
-        min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
-        print "max: ", max_moment_vec
-        print "min: ", min_moment_vec
-        plot_convex_hull(n_vertices)
-
-        if dowait:
-            print "wait"
-            raw_input()
+            return max_moment_vec, min_moment_vec, escape
         else:
-            time.sleep(tm)
+            rot_list[-1] = np.identity(3) # turn = 3-1
+            for i in range(A_theta.shape[0]):
+                group_last_axis = [ joint_group for joint_group in joint_structure for joint_axis in joint_group if joint_axis == joint_order[i] ][0][-1]
+                A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
+                # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i]).T[0]
+            B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S)
 
-        return max_moment_vec, min_moment_vec
+            print "rot_list="
+            pprint.pprint(rot_list)
+            print "A_theta="
+            print A_theta
+            print "B_theta="
+            print B_theta
+            print ""
+
+            n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta)
+
+            max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
+            min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
+            ax.text2D(0.02,0.07+0.01,"max moments = " + str(max_moment_vec) + " [Nm]")
+            print "max: ", max_moment_vec
+            print "min: ", min_moment_vec
+            plot_convex_hull(n_vertices)
+
+            if dowait:
+                print "RET to continue, q to escape"
+                key = raw_input()
+                if key == 'q': escape = True
+            else:
+                time.sleep(tm)
+
+            return max_moment_vec, min_moment_vec, escape
 
 joint_name_list = ("hip-x", "hip-y", "hip-z")
 # roll=x=0, pitch=y=1, yaw=z=2
