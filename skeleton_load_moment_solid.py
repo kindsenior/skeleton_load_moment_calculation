@@ -50,6 +50,8 @@ class PlotInterface():
         self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
         self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
 
+        self.prev_surf_list = []
+
 
     def plot_convex_hull(self, vertices):
         # ax.clear()
@@ -59,6 +61,9 @@ class PlotInterface():
         self.ax.set_xlabel("nx(roll) [Nm]")
         self.ax.set_ylabel("ny(pitch) [Nm]")
         self.ax.set_zlabel("nz(yaw) [Nm]")
+
+        for surf in self.prev_surf_list: surf.remove()
+        self.prev_surf_list = []
 
         # hull = ConvexHull(vertices, incremental=True)
         hull = ConvexHull(vertices, incremental=True, qhull_options="QJ")
@@ -83,9 +88,9 @@ class PlotInterface():
 
             # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
             norm = plt.Normalize(vmax=1500, vmin=-1500)
-            kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05)
+            kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3)
 
-            surf = self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs)
+            self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
 
         # plt.show()
         plt.pause(0.01)
@@ -156,7 +161,6 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             child_joint_range = joint_range_list[child_joint_idx]
             child_joint_axis = np.identity(3)[:,child_joint_idx]
             for child_joint_angle in np.linspace(child_joint_range[0], child_joint_range[1], division_num):
-                ax.clear()
                 print joint_name_list[child_joint_idx], " is ", child_joint_angle, " [deg]"
                 pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
