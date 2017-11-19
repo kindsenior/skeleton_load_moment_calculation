@@ -60,7 +60,24 @@ def plot_convex_hull(vertices):
     # plt.show()
     plt.pause(0.1)
 
-def swipe_joint_range(child_joint_indices, rot_list, local_axis_list):
+def swipe_joint_range(division_num = None, dowait = None, tm = None):
+    if division_num is None:
+        division_num = 5
+
+    if dowait is None:
+        dowait = True
+
+    if tm is None:
+        tm = 0.5
+
+    max_moment_vec = float("-inf")*np.ones(moment_dim)
+    min_moment_vec = float("inf")*np.ones(moment_dim)
+    swipe_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num = division_num, dowait = dowait ,tm = tm)
+
+
+def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None):
+# def swipe_joint_range(child_joint_structure, rot_list, local_axis_list):
+    # child_joint_indices = [idx for l in child_joint_structure for idx in l]
     print "swipe_joint_range()"
     # print "child_joint_indices="
     # print child_joint_indices
