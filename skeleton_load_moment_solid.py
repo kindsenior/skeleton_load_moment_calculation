@@ -125,9 +125,7 @@ def swipe_joint_range(division_num = None, dowait = None, tm = None):
 
 
 def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None):
-# def swipe_joint_range(child_joint_structure, rot_list, local_axis_list):
-    # child_joint_indices = [idx for l in child_joint_structure for idx in l]
-    print "swipe_joint_range()"
+    print "swipe_joint_range_impl()"
     # print "child_joint_indices="
     # print child_joint_indices
     print ""
