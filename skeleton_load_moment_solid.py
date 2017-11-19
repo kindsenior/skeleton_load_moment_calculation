@@ -22,6 +22,20 @@ import cdd
 import pprint
 import time
 
+def h2v(A,b):
+    inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
+    inmat.rep_type = cdd.RepType.INEQUALITY
+    poly = cdd.Polyhedron(inmat)
+    retmat = poly.get_generators()
+    return inmat, poly, retmat
+
+def v2h(flags,vertices):
+    inmat = cdd.Matrix(np.hstack([flags, vertices]), number_type='float')
+    inmat.rep_type = cdd.RepType.GENERATOR
+    poly = cdd.Polyhedron(inmat)
+    retmat = poly.get_inequalities()
+    return inmat, poly, retmat
+
 def plot_convex_hull(vertices):
     ax.clear()
     ax.set_xlim3d(-max_display_num,max_display_num)
@@ -114,14 +128,11 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
         # convert to tau_tilde V->H
         tau_tilde_vertices = tau_vertices.dot(B_theta.T) # u_k^~T
         b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
-        mat = cdd.Matrix(np.hstack([b_tilde, tau_tilde_vertices]), number_type='float')
-        mat.rep_type = cdd.RepType.GENERATOR
-        poly = cdd.Polyhedron(mat)
-        ext = poly.get_inequalities()
+        inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
         print "tau_tilde"
-        print ext
-        C = -np.array(ext)[:,1:]
-        d = np.array(ext)[:,0:1]
+        print retmat
+        C = -np.array(retmat)[:,1:]
+        d = np.array(retmat)[:,0:1]
         print ""
 
         # H->V
@@ -129,14 +140,11 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
         max_value = 2000
         A = np.vstack([C.dot(A_theta), np.identity(moment_dim), -np.identity(moment_dim)])
         b = np.vstack([d, max_value*np.ones(moment_dim)[:,np.newaxis], max_value*np.ones(moment_dim)[:,np.newaxis]])
-        mat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
-        mat.rep_type = cdd.RepType.INEQUALITY
-        poly = cdd.Polyhedron(mat)
-        ext = poly.get_generators()
+        inmat, poly, retmat = h2v(A,b)
         print "final"
-        print ext
+        print retmat
 
-        n_vertices = np.array(ext)[:,1:] # only hull (no cone)
+        n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
         max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
         min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
         print "max: ", max_moment_vec
