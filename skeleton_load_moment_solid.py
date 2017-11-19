@@ -187,6 +187,10 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
 
             max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
             min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
+            max_moment_vec[np.ma.where(abs(max_moment_vec) < 10)] = 0
+            min_moment_vec[np.ma.where(abs(min_moment_vec) < 10)] = 0
+            max_moment_vec[np.ma.where(abs(max_moment_vec) >= 2000)] = np.inf
+            min_moment_vec[np.ma.where(abs(min_moment_vec) >= 2000)] = -np.inf
             pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
             print "max: ", max_moment_vec
             print "min: ", min_moment_vec
