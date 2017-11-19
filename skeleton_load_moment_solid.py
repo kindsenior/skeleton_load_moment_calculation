@@ -75,6 +75,40 @@ def plot_convex_hull(vertices):
     # plt.show()
     plt.pause(0.1)
 
+def convert_to_skeleton_moment_vertices(A_theta, B_theta):
+    # calc max_tau at current pose
+    max_tau_theta = (max_tau/abs(A_theta.dot(A_theta.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
+    print "max_tau_theta=", max_tau_theta
+    # tau convex hull H->V
+    A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
+    b = np.vstack([max_tau_theta[:,np.newaxis],max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
+    inmat, poly, retmat = h2v(A,b)
+    print "max_tau"
+    print retmat
+    tau_vertices = np.array(retmat)[:,1:] # u_k^T
+
+    # convert to tau_tilde V->H
+    tau_tilde_vertices = tau_vertices.dot(B_theta.T) # u_k^~T
+    b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
+    inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
+    print "tau_tilde"
+    print retmat
+    C = -np.array(retmat)[:,1:]
+    d = np.array(retmat)[:,0:1]
+    print ""
+
+    # H->V
+    # for max value
+    max_value = 2000
+    A = np.vstack([C.dot(A_theta), np.identity(moment_dim), -np.identity(moment_dim)])
+    b = np.vstack([d, max_value*np.ones(moment_dim)[:,np.newaxis], max_value*np.ones(moment_dim)[:,np.newaxis]])
+    inmat, poly, retmat = h2v(A,b)
+    print "final"
+    print retmat
+
+    n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
+    return n_vertices
+
 def swipe_joint_range(division_num = None, dowait = None, tm = None):
     if division_num is None:
         division_num = 5
@@ -125,36 +159,8 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
         print B_theta
         print ""
 
-        # calc max_tau at current pose
-        max_tau_theta = (max_tau/abs(A_theta.dot(A_theta.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
-        # tau convex hull H->V
-        A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
-        b = np.vstack([max_tau_theta[:,np.newaxis],max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
-        inmat, poly, retmat = h2v(A,b)
-        # print poly
-        print retmat
-        tau_vertices = np.array(retmat)[:,1:] # u_k^T
+        n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta)
 
-        # convert to tau_tilde V->H
-        tau_tilde_vertices = tau_vertices.dot(B_theta.T) # u_k^~T
-        b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
-        inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
-        print "tau_tilde"
-        print retmat
-        C = -np.array(retmat)[:,1:]
-        d = np.array(retmat)[:,0:1]
-        print ""
-
-        # H->V
-        # for max value
-        max_value = 2000
-        A = np.vstack([C.dot(A_theta), np.identity(moment_dim), -np.identity(moment_dim)])
-        b = np.vstack([d, max_value*np.ones(moment_dim)[:,np.newaxis], max_value*np.ones(moment_dim)[:,np.newaxis]])
-        inmat, poly, retmat = h2v(A,b)
-        print "final"
-        print retmat
-
-        n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
         max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
         min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
         print "max: ", max_moment_vec
