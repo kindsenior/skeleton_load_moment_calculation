@@ -113,7 +113,7 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
         rot_list[-1] = np.identity(3) # turn = 3-1
         for i in range(A_theta.shape[0]):
             group_last_axis = [ joint_group for joint_group in joint_structure for joint_axis in joint_group if joint_axis == joint_order[i] ][0][-1]
-            A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.index(group_last_axis):]).dot(local_axis_list[i]).T[0]
+            A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
             # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i]).T[0]
         B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S)
 
@@ -164,7 +164,7 @@ joint_name_list = ("hip-x", "hip-y", "hip-z")
 joint_structure = [[2],[0],[1],[]] # z-x-y HD
 # joint_structure = [[2],[0],[1]] # z-x-y wired
 # joint_structure = [[2],[0,1]] # z-{x-y}
-joint_order = [idx for l in joint_structure for idx in l]
+joint_order = np.array([idx for l in joint_structure for idx in l])
 num_joints = len(joint_order)
 moment_dim = num_joints
 joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
@@ -176,11 +176,11 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(-30,30),(-45,45),(0,0)] # roll, pitch, yaw
 # max_tau_list = [300,750,200] # roll, pitch, yaw
 # max_tau_list = [350,700,120] # roll, pitch, yaw
-max_tau_list = [330,700,120] # roll, pitch, yaw
+max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
 assert len(joint_range_list) == num_joints
-rot_list = [None for x in range(num_joints)]
+rot_list = np.array([np.identity(3) for x in range(num_joints)])
 # local_axis_list = [None for x in range(num_joints)]
-local_axis_list = [np.identity(moment_dim)[:,idx:idx+1]for idx in joint_order]
+local_axis_list = np.identity(moment_dim)[joint_order] # each row is axis
 
 A_theta = np.zeros([num_joints,moment_dim])
 S = 0.99 * np.diag([1 if x in joint_structure[-1] else 0 for x in joint_order])
