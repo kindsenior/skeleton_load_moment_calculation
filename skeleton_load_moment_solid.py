@@ -23,14 +23,16 @@ import pprint
 import time
 
 def h2v(A,b):
-    inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
+    # inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
+    inmat = cdd.Matrix(np.hstack([b.astype(np.float16),-A.astype(np.float16)]), number_type='float')
     inmat.rep_type = cdd.RepType.INEQUALITY
     poly = cdd.Polyhedron(inmat)
     retmat = poly.get_generators()
     return inmat, poly, retmat
 
 def v2h(flags,vertices):
-    inmat = cdd.Matrix(np.hstack([flags, vertices]), number_type='float')
+    # inmat = cdd.Matrix(np.hstack([flags, vertices]), number_type='float')
+    inmat = cdd.Matrix(np.hstack([flags, vertices.astype(np.float16)]), number_type='float')
     inmat.rep_type = cdd.RepType.GENERATOR
     poly = cdd.Polyhedron(inmat)
     retmat = poly.get_inequalities()
