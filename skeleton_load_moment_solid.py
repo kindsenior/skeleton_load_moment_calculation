@@ -21,13 +21,6 @@ import cdd
 
 import pprint
 
-def Icosahedron():
-    h = 0.5*(1+np.sqrt(5))
-    p1 = np.array([[0,1,h],[0,1,-h],[0,-1,h],[0,-1,-h]])
-    p2 = p1[:,[1,2,0]]
-    p3 = p1[:,[2,0,1]]
-    return np.vstack((p1,p2,p3))
-
 def plot_convex_hull(vertices):
     ax.clear()
     ax.set_xlim3d(-max_display_num,max_display_num)
@@ -169,36 +162,11 @@ tau_vertices = np.array(ext)[:,1:] # u_k^T
 # plot_convex_hull(tau_vertices)
 
 
-max_display_num = 1000
+max_display_num = 1500
 ax.set_xlim3d(-max_display_num,max_display_num)
 ax.set_ylim3d(-max_display_num,max_display_num)
 ax.set_zlim3d(-max_display_num,max_display_num)
 # ax.set_aspect('equal')
 
-swipe_joint_range(joint_order, rot_list, local_axis_list)
-
-# A = np.vstack([np.identity(3),-np.identity(3)])
-# # A = A[:-1]
-# b = np.ones([6,1])
-# b[0] = 2
-# # b = b[:-1]
-
-# # for max value
-# max_value = 3
-# A = np.vstack([A, np.identity(3), -np.identity(3)])
-# b = np.vstack([b, max_value*np.ones([3,1]), max_value*np.ones([3,1])])
-
-# mat = cdd.Matrix(np.hstack([b,-A]), number_type='fraction')
-# mat.rep_type = cdd.RepType.INEQUALITY
-# poly = cdd.Polyhedron(mat)
-# print poly
-# ext = poly.get_generators()
-# print ext
-
-# vertices = np.array(ext)[:,1:]
-# vertices = Icosahedron() # 12 vertices
-
-# hull_vertices = vertices[np.array(ext)[:,0] != 0]
-# cone_vertices = vertices[np.array(ext)[:,0] == 0]
-
-# plot_convex_hull(vertices)
+# swipe_joint_range(joint_order, rot_list, division_num = 0)
+swipe_joint_range(division_num = 0)
