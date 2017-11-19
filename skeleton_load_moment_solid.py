@@ -121,7 +121,6 @@ def convert_to_skeleton_moment_vertices(A_theta, B_theta):
 
     # H->V
     # for max value
-    max_value = 2000
     A = np.vstack([C.dot(A_theta), np.identity(moment_dim), -np.identity(moment_dim)])
     b = np.vstack([d, max_value*np.ones(moment_dim)[:,np.newaxis], max_value*np.ones(moment_dim)[:,np.newaxis]])
     inmat, poly, retmat = h2v(A,b)
@@ -191,8 +190,8 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
             max_moment_vec[np.ma.where(abs(max_moment_vec) < 10)] = 0
             min_moment_vec[np.ma.where(abs(min_moment_vec) < 10)] = 0
-            max_moment_vec[np.ma.where(abs(max_moment_vec) >= 2000)] = np.inf
-            min_moment_vec[np.ma.where(abs(min_moment_vec) >= 2000)] = -np.inf
+            max_moment_vec[np.ma.where(abs(max_moment_vec) >= max_value)] = np.inf
+            min_moment_vec[np.ma.where(abs(min_moment_vec) >= max_value)] = -np.inf
             pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
             print "max: ", max_moment_vec
             print "min: ", min_moment_vec
@@ -228,6 +227,7 @@ def init_vals():
 
     assert len(joint_range_list) == num_joints
 
+max_value = 10000
 joint_name_list = ("hip-x", "hip-y", "hip-z")
 # roll=x=0, pitch=y=1, yaw=z=2
 joint_structure = [[2],[0],[1],[]] # z-x-y HD
