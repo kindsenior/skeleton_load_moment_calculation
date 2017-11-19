@@ -201,14 +201,32 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
 
             return max_moment_vec, min_moment_vec, escape
 
+def init_vals():
+    global joint_order
+    global num_joints
+    global moment_dim
+    global rot_list
+    global local_axis_list
+    global A_theta
+    global S
+
+    joint_order = np.array([idx for l in joint_structure for idx in l])
+    num_joints = len(joint_order)
+    moment_dim = num_joints
+    rot_list = np.array([np.identity(3) for x in range(num_joints)])
+    # local_axis_list = [None for x in range(num_joints)]
+    local_axis_list = np.identity(moment_dim)[joint_order] # each row is axis
+
+    A_theta = np.zeros([num_joints,moment_dim])
+    S = 0.99 * np.diag([1 if x in joint_structure[-1] else 0 for x in joint_order])
+
+    assert len(joint_range_list) == num_joints
+
 joint_name_list = ("hip-x", "hip-y", "hip-z")
 # roll=x=0, pitch=y=1, yaw=z=2
 joint_structure = [[2],[0],[1],[]] # z-x-y HD
 # joint_structure = [[2],[0],[1]] # z-x-y wired
 # joint_structure = [[2],[0,1]] # z-{x-y}
-joint_order = np.array([idx for l in joint_structure for idx in l])
-num_joints = len(joint_order)
-moment_dim = num_joints
 joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(0,0),(0,0),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(-30,30),(0,0),(0,0)] # roll, pitch, yaw
@@ -219,14 +237,8 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # max_tau_list = [300,750,200] # roll, pitch, yaw
 # max_tau_list = [350,700,120] # roll, pitch, yaw
 max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
-assert len(joint_range_list) == num_joints
-rot_list = np.array([np.identity(3) for x in range(num_joints)])
-# local_axis_list = [None for x in range(num_joints)]
-local_axis_list = np.identity(moment_dim)[joint_order] # each row is axis
 
-A_theta = np.zeros([num_joints,moment_dim])
-S = 0.99 * np.diag([1 if x in joint_structure[-1] else 0 for x in joint_order])
-
+init_vals()
 pi = PlotInterface()
 
 max_tau = np.array([max_tau_list[joint_idx] for joint_idx in joint_order])[:,np.newaxis] # from root order
