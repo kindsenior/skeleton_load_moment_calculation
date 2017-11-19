@@ -44,7 +44,7 @@ class PlotInterface():
         self.ax = self.fig.gca(projection='3d')
 
         self._text_pos = [0.02,0.07]
-        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*i,"joint"+str(i)) for i in range(2)]
+        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*i,"joint"+str(i)) for i in range(3)]
         self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*len(self.joint_angle_texts), "max moment =")
 
         self.max_display_num = 1500
