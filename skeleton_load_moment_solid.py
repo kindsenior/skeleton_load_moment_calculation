@@ -36,44 +36,59 @@ def v2h(flags,vertices):
     retmat = poly.get_inequalities()
     return inmat, poly, retmat
 
-def plot_convex_hull(vertices):
-    ax.clear()
-    ax.set_xlim3d(-max_display_num,max_display_num)
-    ax.set_ylim3d(-max_display_num,max_display_num)
-    ax.set_zlim3d(-max_display_num,max_display_num)
-    ax.set_xlabel("nx(roll) [Nm]")
-    ax.set_ylabel("ny(pitch) [Nm]")
-    ax.set_zlabel("nz(yaw) [Nm]")
+class PlotInterface():
+    def __init__(self):
+        self.fig = plt.figure(figsize=(20.0,20.0))
+        self.ax = self.fig.gca(projection='3d')
 
-    # hull = ConvexHull(vertices, incremental=True)
-    hull = ConvexHull(vertices, incremental=True, qhull_options="QJ")
+        self._text_pos = [0.02,0.07]
+        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*i,"joint"+str(i)) for i in range(2)]
+        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*len(self.joint_angle_texts), "max moment =")
 
-    for  idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
-        # print idx, " face: ", face_indices
-        x,y,z = vertices[face_indices,0], vertices[face_indices,1], vertices[face_indices,2]
+        self.max_display_num = 1500
+        self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
+        self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
+        self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
 
-        # print "x: ", x
-        # print "y: ", y
-        # print "z: ", z
-        # print ""
 
-        x = x + z*0.0001
-        y = y + z*0.0001
+    def plot_convex_hull(self, vertices):
+        # ax.clear()
+        self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
+        self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
+        self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
+        self.ax.set_xlabel("nx(roll) [Nm]")
+        self.ax.set_ylabel("ny(pitch) [Nm]")
+        self.ax.set_zlabel("nz(yaw) [Nm]")
 
-        # S = ax.plot_trisurf(x,y,z, cmap=cm.jet)
+        # hull = ConvexHull(vertices, incremental=True)
+        hull = ConvexHull(vertices, incremental=True, qhull_options="QJ")
 
-        triang = tri.Triangulation(x, y)
-        refiner = tri.UniformTriRefiner(triang)
-        new, new_z = refiner.refine_field(z, subdiv=2)
+        for  idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
+            # print idx, " face: ", face_indices
+            x,y,z = vertices[face_indices,0], vertices[face_indices,1], vertices[face_indices,2]
 
-        # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
-        norm = plt.Normalize(vmax=1500, vmin=-1500)
-        kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.2)
+            # print "x: ", x
+            # print "y: ", y
+            # print "z: ", z
+            # print ""
 
-        surf = ax.plot_trisurf(new.x, new.y, new_z, **kwargs)
+            x = x + z*0.0001
+            y = y + z*0.0001
 
-    # plt.show()
-    plt.pause(0.1)
+            # S = ax.plot_trisurf(x,y,z, cmap=cm.jet)
+
+            triang = tri.Triangulation(x, y)
+            refiner = tri.UniformTriRefiner(triang)
+            new, new_z = refiner.refine_field(z, subdiv=2)
+
+            # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
+            norm = plt.Normalize(vmax=1500, vmin=-1500)
+            kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05)
+
+            surf = self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs)
+
+        # plt.show()
+        plt.pause(0.01)
 
 def convert_to_skeleton_moment_vertices(A_theta, B_theta):
     # calc max_tau at current pose
@@ -143,7 +158,7 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             for child_joint_angle in np.linspace(child_joint_range[0], child_joint_range[1], division_num):
                 ax.clear()
                 print joint_name_list[child_joint_idx], " is ", child_joint_angle, " [deg]"
-                ax.text2D(0.02,0.07+0.005*child_joint_idx,joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
+                pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
                 max_moment_vec, min_moment_vec, escape = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape)
 
@@ -168,10 +183,10 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
 
             max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
             min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
-            ax.text2D(0.02,0.07+0.01,"max moments = " + str(max_moment_vec) + " [Nm]")
+            pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
             print "max: ", max_moment_vec
             print "min: ", min_moment_vec
-            plot_convex_hull(n_vertices)
+            pi.plot_convex_hull(n_vertices)
 
             if dowait:
                 print "RET to continue, q to escape"
@@ -208,9 +223,7 @@ local_axis_list = np.identity(moment_dim)[joint_order] # each row is axis
 A_theta = np.zeros([num_joints,moment_dim])
 S = 0.99 * np.diag([1 if x in joint_structure[-1] else 0 for x in joint_order])
 
-fig = plt.figure(figsize=(20.0,20.0))
-# ax = fig.add_subplot(111, projection='3d')
-ax = fig.gca(projection='3d')
+pi = PlotInterface()
 
 max_tau = np.array([max_tau_list[joint_idx] for joint_idx in joint_order])[:,np.newaxis] # from root order
 assert len(max_tau) == num_joints
@@ -227,11 +240,6 @@ assert len(max_tau) == num_joints
 # ax.set_zlabel("Joint2[Nm]")
 # plot_convex_hull(tau_vertices)
 
-
-max_display_num = 1500
-ax.set_xlim3d(-max_display_num,max_display_num)
-ax.set_ylim3d(-max_display_num,max_display_num)
-ax.set_zlim3d(-max_display_num,max_display_num)
 # ax.set_aspect('equal')
 
 # swipe_joint_range(joint_order, rot_list, division_num = 0)
