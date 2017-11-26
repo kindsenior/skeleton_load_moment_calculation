@@ -183,8 +183,8 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             rot_list[-1] = np.identity(3) # turn = 3-1
             for i in range(A_theta.shape[0]):
                 group_last_axis = [ joint_group for joint_group in joint_structure for joint_axis in joint_group if joint_axis == joint_order[i] ][0][-1]
-                A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
-                # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i]).T[0]
+                # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
+                A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i][:,np.newaxis]).T[0]
             B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S)
 
             logger.debug("rot_list=")
