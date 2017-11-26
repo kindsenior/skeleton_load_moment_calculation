@@ -223,6 +223,7 @@ def init_vals():
     global local_axis_list
     global A_theta
     global S
+    global max_tau
 
     joint_order = np.array([idx for l in joint_structure for idx in l])
     num_joints = len(joint_order)
@@ -235,6 +236,14 @@ def init_vals():
     S = 0.99 * np.diag([1 if x in joint_structure[-1] else 0 for x in joint_order])
 
     assert len(joint_range_list) == num_joints
+
+    max_tau = np.array([max_tau_list[joint_idx] for joint_idx in joint_order])[:,np.newaxis] # from root order
+    assert len(max_tau) == num_joints
+
+def set_joint_structure(_joint_structure):
+    global joint_structure
+    joint_structure = _joint_structure
+    init_vals()
 
 max_value = 10000
 joint_name_list = ("hip-x", "hip-y", "hip-z")
@@ -285,11 +294,6 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
 # max_tau_list = np.array([330,750,120]) # roll, pitch, yaw 426,750,607
 
-init_vals()
-pi = PlotInterface()
-
-max_tau = np.array([max_tau_list[joint_idx] for joint_idx in joint_order])[:,np.newaxis] # from root order
-assert len(max_tau) == num_joints
 # # tau convex hull H->V
 # A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
 # b = np.vstack([max_tau,max_tau]) # min_tau = - max_tau -> -min_tau = max_tau
@@ -305,5 +309,8 @@ assert len(max_tau) == num_joints
 
 # ax.set_aspect('equal')
 
-# swipe_joint_range(joint_order, rot_list, division_num = 0)
-swipe_joint_range(division_num = 0)
+pi = PlotInterface()
+
+if __name__ == '__main__':
+    set_joint_structure([[2],[0],[1],[]])
+    swipe_joint_range(division_num = 0)
