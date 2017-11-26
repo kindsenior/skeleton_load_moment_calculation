@@ -22,6 +22,14 @@ import cdd
 import pprint
 import time
 
+from logging import getLogger, StreamHandler, DEBUG, INFO, WARNING, ERROR, CRITICAL
+logger = getLogger(__name__)
+handler = StreamHandler()
+handler.setLevel(DEBUG)
+logger.setLevel(DEBUG)
+logger.addHandler(handler)
+logger.propagate = False
+
 def h2v(A,b):
     # inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
     inmat = cdd.Matrix(np.hstack([b.astype(np.float16),-A.astype(np.float16)]), number_type='float')
@@ -100,32 +108,33 @@ class PlotInterface():
 def convert_to_skeleton_moment_vertices(A_theta, B_theta):
     # calc max_tau at current pose
     max_tau_theta = (max_tau/abs(A_theta.dot(A_theta.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
-    print "max_tau_theta=", max_tau_theta
+    logger.debug("max_tau_theta=" + str(max_tau_theta))
     # tau convex hull H->V
     A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
     b = np.vstack([max_tau_theta[:,np.newaxis],max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
     inmat, poly, retmat = h2v(A,b)
-    print "max_tau"
-    print retmat
+
+    logger.debug("max_tau")
+    logger.debug(retmat)
     tau_vertices = np.array(retmat)[:,1:] # u_k^T
 
     # convert to tau_tilde V->H
     tau_tilde_vertices = tau_vertices.dot(B_theta.T) # u_k^~T
     b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
     inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
-    print "tau_tilde"
-    print retmat
+    logger.debug("tau_tilde")
+    logger.debug(retmat)
     C = -np.array(retmat)[:,1:]
     d = np.array(retmat)[:,0:1]
-    print ""
+    logger.debug("")
 
     # H->V
     # for max value
     A = np.vstack([C.dot(A_theta), np.identity(moment_dim), -np.identity(moment_dim)])
     b = np.vstack([d, max_value*np.ones(moment_dim)[:,np.newaxis], max_value*np.ones(moment_dim)[:,np.newaxis]])
     inmat, poly, retmat = h2v(A,b)
-    print "final"
-    print retmat
+    logger.debug("final")
+    logger.debug(retmat)
 
     n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
     return n_vertices
@@ -146,10 +155,10 @@ def swipe_joint_range(division_num = None, dowait = None, tm = None):
 
 
 def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None):
-    print "swipe_joint_range_impl()"
+    logger.debug("swipe_joint_range_impl()")
     # print "child_joint_indices="
     # print child_joint_indices
-    print ""
+    logger.debug("")
 
     if escape is None: escape = False
 
@@ -162,7 +171,7 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             child_joint_range = joint_range_list[child_joint_idx]
             child_joint_axis = np.identity(3)[:,child_joint_idx]
             for child_joint_angle in np.linspace(child_joint_range[0], child_joint_range[1], division_num):
-                print joint_name_list[child_joint_idx], " is ", child_joint_angle, " [deg]"
+                logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
                 pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
                 max_moment_vec, min_moment_vec, escape = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape)
@@ -176,13 +185,13 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
                 # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i]).T[0]
             B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S)
 
-            print "rot_list="
-            pprint.pprint(rot_list)
-            print "A_theta="
-            print A_theta
-            print "B_theta="
-            print B_theta
-            print ""
+            logger.debug("rot_list=")
+            logger.debug(rot_list)
+            logger.debug("A_theta=")
+            logger.debug(A_theta)
+            logger.debug("B_theta=")
+            logger.debug(B_theta)
+            logger.debug("")
 
             n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta)
 
@@ -193,12 +202,12 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             max_moment_vec[np.ma.where(abs(max_moment_vec) >= max_value)] = np.inf
             min_moment_vec[np.ma.where(abs(min_moment_vec) >= max_value)] = -np.inf
             pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
-            print "max: ", max_moment_vec
-            print "min: ", min_moment_vec
+            logger.info(" max: " + str(max_moment_vec))
+            logger.info(" min: " + str(min_moment_vec))
             pi.plot_convex_hull(n_vertices)
 
             if dowait:
-                print "RET to continue, q to escape"
+                logger.critical("RET to continue, q to escape")
                 key = raw_input()
                 if key == 'q': escape = True
             else:
