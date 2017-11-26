@@ -249,39 +249,6 @@ def set_joint_structure(_joint_structure):
 
 max_value = 10000
 joint_name_list = ("hip-x", "hip-y", "hip-z")
-# roll=x=0, pitch=y=1, yaw=z=2
-# z-x-y
-joint_structure = [[2],[0],[1],[]] # 426,700,607 JAXON1,2
-# joint_structure = [[2],[0],[1]]    # 426,0,607   JAXON3
-# joint_structure = [[2],[0,1],[]]   # 330,700,4317
-# joint_structure = [[2],[0,1]]      # 0,0,4317    RHP
-# joint_structure = [[2,0],[1],[]]   # 350,700,347
-# joint_structure = [[2,0],[1]]      # 350,0,347   x-
-# joint_structure = [[2,0,1]]        # 0,0,0
-# joint_structure = [[2,0,1],[]]     # 330,700,120
-# z-y-x
-# joint_structure = [[2],[1],[0],[]] # 330,3050,7456 ok
-# joint_structure = [[2],[1],[0]]    # 0,3050,7456 ok
-# joint_structure = [[2],[1,0]]      # 0,0,4660 ok
-# joint_structure = [[2,1],[0]]     # 0,710,666 ok-
-# x-y-z
-# joint_structure = [[0],[1],[2],[]] # 4733,2756,120 ok
-# joint_structure = [[0],[1],[2]]    # 4732,2756,0 ok
-# joint_structure = [[0],[1,2]]      # inf,0,0 ok-
-# joint_structure = [[0,1],[2]]      # 770,771,0 ok
-# x-z-y
-# joint_structure = [[0],[2],[1],[]] # inf,700,2377 ok
-# joint_structure = [[0],[2,1]]      # error
-# joint_structure = [[0,2],[1]]      # 350,0,347 ok-
-# y-x-z
-# joint_structure = [[1],[0],[2],[]] # 787,795,120 ok
-# joint_structure = [[1],[0,2]]      # 0,inf,0 ok-
-# joint_structure = [[1,0],[2]]      # 770,771,0 ok
-# y-z-x
-# joint_structure = [[1],[2],[0],[]] # 330,inf,1933 ok
-# joint_structure = [[1],[2,0]]      # 0,inf,0 ok-
-# joint_structure = [[1,2],[0]]      # 0,715,666 ok-
-
 joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(0,0),(0,0),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(-30,30),(0,0),(0,0)] # roll, pitch, yaw
@@ -291,25 +258,8 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(45,45),(45,45),(0,0)] # roll=45, pitch=45, yaw
 # joint_range_list = np.array([(60,60),(45,45),(0,0)]) # roll, pitch, yaw
 # joint_range_list = [(-30,30),(-45,45),(0,0)] # roll, pitch, yaw
-# max_tau_list = [300,750,200] # roll, pitch, yaw
-# max_tau_list = [350,700,120] # roll, pitch, yaw
 max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
 # max_tau_list = np.array([330,750,120]) # roll, pitch, yaw 426,750,607
-
-# # tau convex hull H->V
-# A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
-# b = np.vstack([max_tau,max_tau]) # min_tau = - max_tau -> -min_tau = max_tau
-# inmat, poly, retmat = h2v(A,b)
-# print poly
-# print retmat
-# tau_vertices = np.array(retmat)[:,1:] # u_k^T
-
-# ax.set_xlabel("Joint0[Nm]")
-# ax.set_ylabel("Joint1[Nm]")
-# ax.set_zlabel("Joint2[Nm]")
-# plot_convex_hull(tau_vertices)
-
-# ax.set_aspect('equal')
 
 pi = PlotInterface()
 
