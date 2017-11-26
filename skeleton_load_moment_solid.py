@@ -139,7 +139,7 @@ def convert_to_skeleton_moment_vertices(A_theta, B_theta):
     n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
     return n_vertices
 
-def swipe_joint_range(division_num = None, dowait = None, tm = None):
+def swipe_joint_range(division_num = None, dowait = None, tm = None, plot = None):
     if division_num is None:
         division_num = 5
 
@@ -149,12 +149,14 @@ def swipe_joint_range(division_num = None, dowait = None, tm = None):
     if tm is None:
         tm = 0.5
 
+    if plot is None: plot = True
+
     max_moment_vec = float("-inf")*np.ones(moment_dim)
     min_moment_vec = float("inf")*np.ones(moment_dim)
-    swipe_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num = division_num, dowait = dowait ,tm = tm)
+    return swipe_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num = division_num, dowait = dowait ,tm = tm, plot = plot)
 
 
-def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None):
+def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None, plot = None):
     logger.debug("swipe_joint_range_impl()")
     # print "child_joint_indices="
     # print child_joint_indices
@@ -174,7 +176,7 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
                 logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
                 pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
-                max_moment_vec, min_moment_vec, escape = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape)
+                max_moment_vec, min_moment_vec, escape = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape, plot = plot)
 
             return max_moment_vec, min_moment_vec, escape
         else:
@@ -204,7 +206,7 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
             logger.info(" max: " + str(max_moment_vec))
             logger.info(" min: " + str(min_moment_vec))
-            pi.plot_convex_hull(n_vertices)
+            if plot: pi.plot_convex_hull(n_vertices)
 
             if dowait:
                 logger.critical("RET to continue, q to escape")
