@@ -305,18 +305,23 @@ sqlink_mass_array = np.array([sqlink.calculate_min_mass(moment_vec) for moment_v
 hslink_mass_array = np.array([hslink.calculate_min_mass(moment_vec) for moment_vec in moment_array])
 
 fig, (bending_plt, torsional_plt) = plt.subplots(ncols=2, figsize=(15,4))
+fig.subplots_adjust(left=0.05,right=0.98, bottom=0.15,top=0.9, wspace=0.1, hspace=1)
 
 bending_plt.plot(moment_array[:,0], sqlink_mass_array[:,0], label="Square pipe link")
 bending_plt.plot(moment_array[:,0], hslink_mass_array[:,0], label="H-section link")
-bending_plt.set_xlabel("Moment [Nm]")
+bending_plt.set_title("Link mass calculated from bending thresholds")
+bending_plt.set_xlabel("Skeleton load moment [Nm]")
 bending_plt.set_ylabel("Mass [g]")
 bending_plt.grid(True)
 bending_plt.legend()
 
 torsional_plt.plot(moment_array[:,0], sqlink_mass_array[:,1], label="Square pipe link")
 torsional_plt.plot(moment_array[:,0], hslink_mass_array[:,1], label="H-section link")
-torsional_plt.set_xlabel("Moment [Nm]")
+torsional_plt.set_title("Link mass calculated from torsional thresholds")
+torsional_plt.set_xlabel("Skeleton load oment [Nm]")
 torsional_plt.grid(True)
 torsional_plt.legend()
 
+plt.rcParams["font.size"] = 15
 plt.pause(0.1)
+fig.savefig("skeleton-load-moment-link-mass-relation.png")
