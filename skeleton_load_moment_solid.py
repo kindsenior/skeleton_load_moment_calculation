@@ -267,5 +267,33 @@ max_tau_list = np.array([300,700,120]) # roll, pitch, yaw
 pi = PlotInterface()
 
 if __name__ == '__main__':
+    np.set_printoptions(precision=5)
+
+    # set_joint_structure([[2],[1],[0],[]])
+    # swipe_joint_range(division_num = 0)
+
+    plt.rcParams["font.size"] = 25
+
+    max_display_num = 800
+    pi.ax.set_xlim3d(-max_display_num,max_display_num)
+    pi.ax.set_ylim3d(-max_display_num,max_display_num)
+    pi.ax.set_zlim3d(-max_display_num,max_display_num)
+
+    joint_range_list = [(0,0),(0,0),(0,0)]
     set_joint_structure([[2],[0],[1],[]])
-    swipe_joint_range(division_num = 0)
+    swipe_joint_range(division_num = 1, dowait=False)
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    plt.pause(0.1)
+    plt.savefig("initial-skeleton-load-moment-solid.png")
+
+    joint_range_list = [(35,35),(100,100),(20,20)]
+    swipe_joint_range(division_num = 1, dowait=False)
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
+    plt.pause(0.1)
+    plt.savefig("joint-structure-comparison-solid_z-x-y.png")
+
+    set_joint_structure([[2],[1],[0],[]])
+    swipe_joint_range(division_num = 1, dowait=False)
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
+    plt.pause(0.1)
+    plt.savefig("joint-structure-comparison-solid_z-y-x.png")
