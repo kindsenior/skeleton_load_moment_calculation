@@ -66,9 +66,9 @@ class PlotInterface():
 
     def plot_convex_hull(self, vertices):
         # ax.clear()
-        self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
-        self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
-        self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
+        # self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
+        # self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
+        # self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
         self.ax.set_xlabel("nx(roll) [Nm]")
         self.ax.set_ylabel("ny(pitch) [Nm]")
         self.ax.set_zlabel("nz(yaw) [Nm]")
