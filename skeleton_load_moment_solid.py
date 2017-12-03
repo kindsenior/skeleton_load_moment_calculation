@@ -99,7 +99,8 @@ class PlotInterface():
 
             # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
             norm = plt.Normalize(vmax=1500, vmin=-1500)
-            kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3)
+            # kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3)
+            kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.1, alpha = 0.3)
 
             self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
 
