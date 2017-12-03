@@ -287,6 +287,7 @@ calculate_link_mass([[2],[0,1]])      # 0,0,4317
 # z-y-x
 calculate_link_mass([[2],[1],[0],[]]) # 330,3050,7456 ok
 calculate_link_mass([[2],[1],[0]])    # 0,3050,7456 ok
+sklms.max_tau_list = np.array([301,700,120]) # roll, pitch, yaw これがないとerror
 calculate_link_mass([[2],[1,0]])      # 0,0,4660 ok
 # calculate_link_mass([[2,1],[0]])     # 0,710,666 ok-
 
