@@ -258,7 +258,8 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # joint_range_list = [(45,45),(45,45),(0,0)] # roll=45, pitch=45, yaw
 # joint_range_list = np.array([(60,60),(45,45),(0,0)]) # roll, pitch, yaw
 # joint_range_list = [(-30,30),(-45,45),(0,0)] # roll, pitch, yaw
-max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
+# max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
+max_tau_list = np.array([300,700,120]) # roll, pitch, yaw
 # max_tau_list = np.array([330,750,120]) # roll, pitch, yaw 426,750,607
 
 pi = PlotInterface()
