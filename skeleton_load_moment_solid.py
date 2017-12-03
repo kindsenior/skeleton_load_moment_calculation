@@ -48,12 +48,13 @@ def v2h(flags,vertices):
 
 class PlotInterface():
     def __init__(self):
-        self.fig = plt.figure(figsize=(20.0,20.0))
+        self.fig = plt.figure(figsize=(12.0,12.0))
         self.ax = self.fig.gca(projection='3d')
+        self.fig.subplots_adjust(left=0.02,right=0.98, bottom=0.02,top=0.98, wspace=0.1, hspace=1)
 
-        self._text_pos = [0.02,0.07]
-        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*i,"joint"+str(i)) for i in range(3)]
-        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.005*len(self.joint_angle_texts), "max moment =")
+        self._text_pos = [-0.095,0.06]
+        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*i,"", fontsize=25) for i in range(3)]
+        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*len(self.joint_angle_texts), "max moment =", fontsize=25)
 
         self.max_display_num = 1500
         self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
