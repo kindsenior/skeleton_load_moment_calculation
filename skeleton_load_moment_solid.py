@@ -297,3 +297,28 @@ if __name__ == '__main__':
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("joint-structure-comparison-solid_z-y-x.png")
+
+
+    joint_range_list = [(20,20),(70,70),(0,0)]
+    max_display_num = 500
+    pi.ax.set_xlim3d(-max_display_num,max_display_num)
+    pi.ax.set_ylim3d(-max_display_num,max_display_num)
+    pi.ax.set_zlim3d(-max_display_num,max_display_num)
+
+    set_joint_structure([[2],[0],[1],[]])
+    swipe_joint_range(division_num = 1, dowait=False)
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    plt.pause(0.1)
+    plt.savefig("deflection-correction-comparison-solid_rotational.png")
+
+    set_joint_structure([[2],[0],[1]])
+    swipe_joint_range(division_num = 1, dowait=False)
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    plt.pause(0.1)
+    plt.savefig("deflection-correction-comparison-solid_tendon.png")
+
+    set_joint_structure([[2],[0,1]])
+    swipe_joint_range(division_num = 1, dowait=False)
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    plt.pause(0.1)
+    plt.savefig("deflection-correction-comparison-solid_linear.png")
