@@ -286,6 +286,18 @@ max_tau_list = np.array([300,700,120]) # roll, pitch, yaw
 
 pi = PlotInterface()
 
+def export_snapshot():
+    global joint_range_list
+    max_display_num = 800
+    pi.ax.set_xlim3d(-max_display_num,max_display_num)
+    pi.ax.set_ylim3d(-max_display_num,max_display_num)
+    pi.ax.set_zlim3d(-max_display_num,max_display_num)
+    joint_range_list = [(-30,60),(0,80),(-90,90)]
+    set_joint_structure([[2],[1],[0],[]])
+    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="total-skeleton-load-moment-solid/total-skeleton-load-moment-solid.png", isInstant=False)
+    sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="instant-skeleton-load-moment-solid/instant-skeleton-load-moment-solid.png")
+
 if __name__ == '__main__':
     np.set_printoptions(precision=5)
 
