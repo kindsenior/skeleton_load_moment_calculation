@@ -63,10 +63,13 @@ class PlotInterface():
 
         self.prev_surf_list = []
 
+    def reset_hull(self):
+        self.vertices = None
 
-    def plot_convex_hull(self, vertices, save_plot=None, fname="test.png"):
+    def plot_convex_hull(self, vertices, save_plot=None, fname="test.png", isInstant=None):
 
         if save_plot is None: save_plot=False
+        if isInstant is None: isInstant=True
 
         # ax.clear()
         # self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
@@ -79,12 +82,18 @@ class PlotInterface():
         for surf in self.prev_surf_list: surf.remove()
         self.prev_surf_list = []
 
+        if isInstant or self.vertices is None:
+            self.vertices = vertices
+        else:
+            # [ self.vertices.append(vertex) for vertices in vertices ]
+            self.vertices = np.append(self.vertices, vertices, axis=0)
+
         # hull = ConvexHull(vertices, incremental=True)
-        hull = ConvexHull(vertices, incremental=True, qhull_options="QJ")
+        hull = ConvexHull(self.vertices, incremental=True, qhull_options="QJ")
 
         for  idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
             # print idx, " face: ", face_indices
-            x,y,z = vertices[face_indices,0], vertices[face_indices,1], vertices[face_indices,2]
+            x,y,z = self.vertices[face_indices,0], self.vertices[face_indices,1], self.vertices[face_indices,2]
 
             # print "x: ", x
             # print "y: ", y
@@ -146,7 +155,7 @@ def convert_to_skeleton_moment_vertices(A_theta, B_theta):
     n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
     return n_vertices
 
-def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_plot=None, fname=None):
+def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_plot=None, fname=None, isInstant=None):
     if division_num is None:
         division_num = 5
 
@@ -160,12 +169,15 @@ def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_p
 
     if save_plot is None: save_plot = False
 
+    if isInstant is None: isInstant = True
+    # if not isInstant: pi.reset_hull() # error (popitem(): dictionary is empty)
+
     max_moment_vec = float("-inf")*np.ones(moment_dim)
     min_moment_vec = float("inf")*np.ones(moment_dim)
-    return sweep_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num=division_num, dowait=dowait ,tm=tm, plot=plot, save_plot=save_plot, fname=fname)
+    return sweep_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num=division_num, dowait=dowait, tm=tm, plot=plot, save_plot=save_plot, fname=fname, isInstant=isInstant)
 
 
-def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num=None, dowait=None, tm=None, escape=None, plot=None, save_plot=None, fname=None):
+def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num, dowait, tm, plot, save_plot, fname, isInstant, escape=None):
     logger.debug("sweep_joint_range_impl()")
     # print "child_joint_indices="
     # print child_joint_indices
@@ -186,7 +198,7 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
                 pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
                 max_moment_vec, min_moment_vec, escape = sweep_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait=dowait, division_num=division_num, tm=tm, escape=escape, plot=plot,
-                                                                                save_plot=save_plot, fname=fname.replace(".","-"+str(idx)+"."))
+                                                                                save_plot=save_plot, fname=fname.replace(".","-"+str(idx)+"."), isInstant=isInstant)
 
             return max_moment_vec, min_moment_vec, escape
         else:
@@ -216,7 +228,7 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
             logger.info(" max: " + str(max_moment_vec))
             logger.info(" min: " + str(min_moment_vec))
-            if plot: pi.plot_convex_hull(n_vertices, save_plot=save_plot, fname=fname)
+            if plot: pi.plot_convex_hull(n_vertices, save_plot=save_plot, fname=fname, isInstant=isInstant)
 
             if dowait:
                 logger.critical("RET to continue, q to escape")
