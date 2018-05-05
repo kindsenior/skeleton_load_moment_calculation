@@ -181,11 +181,12 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             child_joint_idx = child_joint_indices[1] # x/y/z = 0/1/2
             child_joint_range = joint_range_list[child_joint_idx]
             child_joint_axis = np.identity(3)[:,child_joint_idx]
-            for child_joint_angle in np.linspace(child_joint_range[0], child_joint_range[1], division_num):
+            for idx, child_joint_angle in enumerate(np.linspace(child_joint_range[0], child_joint_range[1], division_num)):
                 logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
                 pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
-                max_moment_vec, min_moment_vec, escape = sweep_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait=dowait, division_num=division_num, tm=tm, escape=escape, plot=plot, save_plot=save_plot, fname=fname)
+                max_moment_vec, min_moment_vec, escape = sweep_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait=dowait, division_num=division_num, tm=tm, escape=escape, plot=plot,
+                                                                                save_plot=save_plot, fname=fname.replace(".","-"+str(idx)+"."))
 
             return max_moment_vec, min_moment_vec, escape
         else:
@@ -293,11 +294,11 @@ if __name__ == '__main__':
 
     joint_range_list = [(35,35),(100,100),(20,20)]
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_z-x-y.png")
+    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zxy.png")
 
     set_joint_structure([[2],[1],[0],[]])
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_z-y-x.png")
+    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zyx.png")
 
 
     joint_range_list = [(20,20),(70,70),(0,0)]
