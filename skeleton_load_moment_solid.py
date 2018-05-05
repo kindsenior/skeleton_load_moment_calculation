@@ -141,7 +141,7 @@ def convert_to_skeleton_moment_vertices(A_theta, B_theta):
     n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
     return n_vertices
 
-def swipe_joint_range(division_num = None, dowait = None, tm = None, plot = None):
+def sweep_joint_range(division_num = None, dowait = None, tm = None, plot = None):
     if division_num is None:
         division_num = 5
 
@@ -155,11 +155,11 @@ def swipe_joint_range(division_num = None, dowait = None, tm = None, plot = None
 
     max_moment_vec = float("-inf")*np.ones(moment_dim)
     min_moment_vec = float("inf")*np.ones(moment_dim)
-    return swipe_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num = division_num, dowait = dowait ,tm = tm, plot = plot)
+    return sweep_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num = division_num, dowait = dowait ,tm = tm, plot = plot)
 
 
-def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None, plot = None):
-    logger.debug("swipe_joint_range_impl()")
+def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num = None, dowait = None, tm = None, escape = None, plot = None):
+    logger.debug("sweep_joint_range_impl()")
     # print "child_joint_indices="
     # print child_joint_indices
     logger.debug("")
@@ -178,7 +178,7 @@ def swipe_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
                 logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
                 pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
-                max_moment_vec, min_moment_vec, escape = swipe_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape, plot = plot)
+                max_moment_vec, min_moment_vec, escape = sweep_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait = dowait, division_num = division_num, tm = tm, escape = escape, plot = plot)
 
             return max_moment_vec, min_moment_vec, escape
         else:
@@ -270,7 +270,7 @@ if __name__ == '__main__':
     np.set_printoptions(precision=5)
 
     # set_joint_structure([[2],[1],[0],[]])
-    # swipe_joint_range(division_num = 0)
+    # sweep_joint_range(division_num = 0)
 
     plt.rcParams["font.size"] = 25
 
@@ -281,19 +281,19 @@ if __name__ == '__main__':
 
     joint_range_list = [(0,0),(0,0),(0,0)]
     set_joint_structure([[2],[0],[1],[]])
-    swipe_joint_range(division_num = 1, dowait=False)
+    sweep_joint_range(division_num = 1, dowait=False)
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("initial-skeleton-load-moment-solid.png")
 
     joint_range_list = [(35,35),(100,100),(20,20)]
-    swipe_joint_range(division_num = 1, dowait=False)
+    sweep_joint_range(division_num = 1, dowait=False)
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("joint-structure-comparison-solid_z-x-y.png")
 
     set_joint_structure([[2],[1],[0],[]])
-    swipe_joint_range(division_num = 1, dowait=False)
+    sweep_joint_range(division_num = 1, dowait=False)
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("joint-structure-comparison-solid_z-y-x.png")
@@ -306,19 +306,19 @@ if __name__ == '__main__':
     pi.ax.set_zlim3d(-max_display_num,max_display_num)
 
     set_joint_structure([[2],[0],[1],[]])
-    swipe_joint_range(division_num = 1, dowait=False)
+    sweep_joint_range(division_num = 1, dowait=False)
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("deflection-correction-comparison-solid_rotational.png")
 
     set_joint_structure([[2],[0],[1]])
-    swipe_joint_range(division_num = 1, dowait=False)
+    sweep_joint_range(division_num = 1, dowait=False)
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("deflection-correction-comparison-solid_tendon.png")
 
     set_joint_structure([[2],[0,1]])
-    swipe_joint_range(division_num = 1, dowait=False)
+    sweep_joint_range(division_num = 1, dowait=False)
     pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
     plt.pause(0.1)
     plt.savefig("deflection-correction-comparison-solid_linear.png")

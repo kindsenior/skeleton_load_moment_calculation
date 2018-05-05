@@ -241,7 +241,7 @@ class HSectionLink(Link):
 def calculate_max_skeleton_load_moment(_joint_structure):
     joint_structure = _joint_structure
     sklms.set_joint_structure(joint_structure)
-    max_moment_vec,_,_ = sklms.swipe_joint_range(dowait=False, division_num=10 ,tm = 0, plot = False)
+    max_moment_vec,_,_ = sklms.sweep_joint_range(dowait=False, division_num=10 ,tm = 0, plot = False)
     logger.info("joint_structure=" + str(joint_structure) + " : max_moment=" + str(max_moment_vec))
     return max_moment_vec
 
