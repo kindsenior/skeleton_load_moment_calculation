@@ -1,4 +1,3 @@
-# convert -delay 20 -loop 0 *.png total-skeleton-load-moment-solid.gif
 
 idx=0
 for fname in instant-skeleton-load-moment-solid/*.png
