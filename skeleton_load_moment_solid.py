@@ -168,6 +168,7 @@ def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_p
     if plot is None: plot = True
 
     if save_plot is None: save_plot = False
+    if fname is None: fname = ""
 
     if isInstant is None: isInstant = True
     # if not isInstant: pi.reset_hull() # error (popitem(): dictionary is empty)
