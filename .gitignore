@@ -102,7 +102,3 @@ ENV/
 
 # emacs
 *~
-
-# figures and movies
-*.png
-*.mp4
