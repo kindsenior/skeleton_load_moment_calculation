@@ -18,8 +18,8 @@ import scipy.linalg as linalg
 
 import cdd
 
-import pprint
-import time
+import pprint, time, sys
+from colorama import Fore, Back, Style
 import pdb
 
 import cnoid.Body as Body
@@ -103,7 +103,7 @@ class PlotInterface():
             logger.debug("simplices")
             logger.debug(hull.simplices)
         except qhull.QhullError:
-            print('!QhullError!')
+            logger.critical('!QhullError!')
             return
 
         for idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
@@ -126,7 +126,7 @@ class PlotInterface():
 
                 self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
             except RuntimeError:
-                print('RuntimeError (provably "Error in qhull Delaunay triangulation calculation")')
+                logger.critical('RuntimeError (provably "Error in qhull Delaunay triangulation calculation")')
                 logger.debug(str(idx)+" face: "+str(face_indices))
                 logger.debug("x,y,z= "+str(x)+", "+str(y)+", "+str(z))
 
@@ -152,7 +152,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = h2v(A,b)
     except RuntimeError:
-        print('!!!!!RuntimeError (h2v())!!!!!')
+        logger.critical('!!!!!RuntimeError (h2v())!!!!!')
         return np.array([range(6)])
 
     logger.debug("max_tau")
@@ -165,7 +165,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
     except RuntimeError:
-        print('!!!!!RuntimeError (v2h())!!!!!')
+        logger.critical('!!!!!RuntimeError (v2h())!!!!!')
         return np.array([range(6)])
     logger.debug("tau_tilde")
     logger.debug(retmat)
@@ -180,7 +180,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = h2v(A,b)
     except RuntimeError:
-        print('!!!!!RuntimeError (h2v())!!!!!')
+        logger.critical('!!!!!RuntimeError (h2v())!!!!!')
         return np.array([range(6)])
 
     logger.debug("final")
@@ -389,10 +389,13 @@ class JointLoadWrenchAnalyzer():
         if division_num is None: division_num = 1
         if tm is None: tm = 0.2
 
+        joint_name = self.joint_path.joint(joint_idx).name()
         joint_range = self.joint_range_list[joint_idx]
 
+        if joint_idx < self.joint_path.numJoints(): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
+        if joint_idx+1 == self.joint_path.numJoints(): print(" changed")
         for joint_angle in np.linspace(joint_range[0],joint_range[1],division_num):
-            self.robot.link(self.joint_path.joint(joint_idx).name()).q = np.deg2rad(joint_angle) # set joint angle [rad]
+            self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints():
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,do_wait=do_wait,division_num=division_num,tm=tm)
             else:
