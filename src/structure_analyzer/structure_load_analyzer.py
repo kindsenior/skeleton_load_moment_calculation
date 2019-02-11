@@ -114,7 +114,7 @@ class PlotInterface():
             logger.debug("simplices")
             logger.debug(hull.simplices)
         except qhull.QhullError:
-            logger.critical('!QhullError!')
+            logger.critical(Fore.RED+'!QhullError!'+Style.RESET_ALL)
             return
 
         for idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
@@ -137,7 +137,7 @@ class PlotInterface():
 
                 self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
             except RuntimeError:
-                logger.critical('RuntimeError (provably "Error in qhull Delaunay triangulation calculation")')
+                logger.critical(Fore.RED+'RuntimeError (provably "Error in qhull Delaunay triangulation calculation")'+Style.RESET_ALL)
                 logger.debug(str(idx)+" face: "+str(face_indices))
                 logger.debug("x,y,z= "+str(x)+", "+str(y)+", "+str(z))
 
@@ -163,7 +163,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = h2v(A,b)
     except RuntimeError:
-        logger.critical('!!!!!RuntimeError (h2v())!!!!!')
+        logger.critical(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
         return np.array([range(6)])
 
     logger.debug("max_tau")
@@ -176,7 +176,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
     except RuntimeError:
-        logger.critical('!!!!!RuntimeError (v2h())!!!!!')
+        logger.critical(Fore.RED+'!!!!!RuntimeError (v2h())!!!!!'+Style.RESET_ALL)
         return np.array([range(6)])
     logger.debug("tau_tilde")
     logger.debug(retmat)
@@ -191,7 +191,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = h2v(A,b)
     except RuntimeError:
-        logger.critical('!!!!!RuntimeError (h2v())!!!!!')
+        logger.critical(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
         return np.array([range(6)])
 
     logger.debug("final")
@@ -277,7 +277,7 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             if plot: pi.plot_convex_hull(n_vertices, save_plot=save_plot, fname=fname, isInstant=isInstant)
 
             if dowait:
-                logger.critical("RET to continue, q to escape")
+                logger.critical(Fore.BLUE+"RET to continue, q to escape"+Style.RESET_ALL)
                 key = raw_input()
                 if key == 'q': escape = True
             else:
@@ -431,7 +431,7 @@ class JointLoadWrenchAnalyzer():
                 if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
 
                 if do_wait:
-                    logger.critical("RET to continue, q to escape")
+                    logger.critical("RET to continue, q to escape"+Style.RESET_ALL)
                     key = raw_input()
                     if key == 'q': escape = True
                 else:
