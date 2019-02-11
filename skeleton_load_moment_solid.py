@@ -9,26 +9,31 @@ from scipy.spatial import Delaunay
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import itertools as it
 
-# import numpy
 # from mpl_toolkits.mplot3d import Axes3D
 # import matplotlib.pyplot as plt
 from matplotlib import tri, cm
 
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull, qhull
 import scipy.linalg as linalg
 
 import cdd
 
 import pprint
 import time
+import pdb
+
+import cnoid.Body as Body
 
 from logging import getLogger, StreamHandler, DEBUG, INFO, WARNING, ERROR, CRITICAL
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(DEBUG)
-logger.setLevel(DEBUG)
+# logger.setLevel(DEBUG)
+logger.setLevel(INFO)
 logger.addHandler(handler)
 logger.propagate = False
+
+import jsk_choreonoid.util as jcu
 
 def h2v(A,b):
     # inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
@@ -82,62 +87,86 @@ class PlotInterface():
         for surf in self.prev_surf_list: surf.remove()
         self.prev_surf_list = []
 
-        if isInstant or self.vertices is None:
+        if isInstant or self.vertices is None: # reset vertices for instant skeleton load moment
             self.vertices = vertices
         else:
             # [ self.vertices.append(vertex) for vertices in vertices ]
-            self.vertices = np.append(self.vertices, vertices, axis=0)
+            self.vertices = np.append(self.vertices, vertices, axis=0) # append vertices for total skeleton load moment
+            # need to reduce vertices?
 
-        # hull = ConvexHull(vertices, incremental=True)
-        hull = ConvexHull(self.vertices, incremental=True, qhull_options="QJ")
+        self.vertices = np.round(self.vertices) # round to integer
+        self.vertices = np.array(list(map(list, set(map(tuple, self.vertices.tolist()))))) # remove dupulicates
 
-        for  idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
-            # print idx, " face: ", face_indices
+        try:
+            # hull = ConvexHull(vertices, incremental=True)
+            hull = ConvexHull(self.vertices, incremental=True, qhull_options="QJ")
+            logger.debug("simplices")
+            logger.debug(hull.simplices)
+        except qhull.QhullError:
+            print('!QhullError!')
+            return
+
+        for idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
+            # logger.debug(str(idx)+" face: "+str(face_indices))
             x,y,z = self.vertices[face_indices,0], self.vertices[face_indices,1], self.vertices[face_indices,2]
 
-            # print "x: ", x
-            # print "y: ", y
-            # print "z: ", z
-            # print ""
-
+            # plot by trisurf
             x = x + z*0.0001
             y = y + z*0.0001
+            # logger.debug("x,y,z= "+str(x)+", "+str(y)+", "+str(z))
+            try:
+                triang = tri.Triangulation(x, y)
+                refiner = tri.UniformTriRefiner(triang)
+                new, new_z = refiner.refine_field(z, subdiv=2)
 
-            # S = ax.plot_trisurf(x,y,z, cmap=cm.jet)
+                # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
+                norm = plt.Normalize(vmax=1500, vmin=-1500)
+                # kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3)
+                kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.1, alpha = 0.3, edgecolors='black')
 
-            triang = tri.Triangulation(x, y)
-            refiner = tri.UniformTriRefiner(triang)
-            new, new_z = refiner.refine_field(z, subdiv=2)
+                self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
+            except RuntimeError:
+                print('RuntimeError (provably "Error in qhull Delaunay triangulation calculation")')
+                logger.debug(str(idx)+" face: "+str(face_indices))
+                logger.debug("x,y,z= "+str(x)+", "+str(y)+", "+str(z))
 
-            # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
-            norm = plt.Normalize(vmax=1500, vmin=-1500)
-            # kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3)
-            kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.1, alpha = 0.3)
-
-            self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
+            # # plot by surface
+            # x,y,z = [np.append(vec,vec[2]).reshape((2,2)) for vec in [x,y,z]]
+            # logger.debug("x,y,z=\n "+str(x)+",\n "+str(y)+",\n "+str(z))
+            # self.ax.plot_surface(x,y,z,alpha = 0.3)
 
         # plt.show()
         plt.pause(0.01)
 
         if save_plot: plt.savefig(fname)
 
-def convert_to_skeleton_moment_vertices(A_theta, B_theta):
-    # calc max_tau at current pose
-    max_tau_theta = (max_tau/abs(A_theta.dot(A_theta.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
+def convert_to_skeleton_moment_vertices(A_, B_):
+    num_joints = A_.shape[1]
+    load_dim = 6 # needless?
+    # load_dim = 3 # needless?
+    # max_tau_theta = (max_tau/abs(A_.dot(A_.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
     logger.debug("max_tau_theta=" + str(max_tau_theta))
     # tau convex hull H->V
     A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
     b = np.vstack([max_tau_theta[:,np.newaxis],max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
-    inmat, poly, retmat = h2v(A,b)
+    try:
+        inmat, poly, retmat = h2v(A,b)
+    except RuntimeError:
+        print('!!!!!RuntimeError (h2v())!!!!!')
+        return np.array([range(6)])
 
     logger.debug("max_tau")
     logger.debug(retmat)
     tau_vertices = np.array(retmat)[:,1:] # u_k^T
 
     # convert to tau_tilde V->H
-    tau_tilde_vertices = tau_vertices.dot(B_theta.T) # u_k^~T
+    tau_tilde_vertices = tau_vertices.dot(B_.T) # u_k^~T
     b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
-    inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
+    try:
+        inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
+    except RuntimeError:
+        print('!!!!!RuntimeError (v2h())!!!!!')
+        return np.array([range(6)])
     logger.debug("tau_tilde")
     logger.debug(retmat)
     C = -np.array(retmat)[:,1:]
@@ -146,9 +175,14 @@ def convert_to_skeleton_moment_vertices(A_theta, B_theta):
 
     # H->V
     # for max value
-    A = np.vstack([C.dot(A_theta), np.identity(moment_dim), -np.identity(moment_dim)])
-    b = np.vstack([d, max_value*np.ones(moment_dim)[:,np.newaxis], max_value*np.ones(moment_dim)[:,np.newaxis]])
-    inmat, poly, retmat = h2v(A,b)
+    A = np.vstack([C.dot(A_), np.identity(load_dim), -np.identity(load_dim)])
+    b = np.vstack([d, max_value*np.ones(load_dim)[:,np.newaxis], max_value*np.ones(load_dim)[:,np.newaxis]])
+    try:
+        inmat, poly, retmat = h2v(A,b)
+    except RuntimeError:
+        print('!!!!!RuntimeError (h2v())!!!!!')
+        return np.array([range(6)])
+
     logger.debug("final")
     logger.debug(retmat)
 
@@ -208,7 +242,7 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
                 group_last_axis = [ joint_group for joint_group in joint_structure for joint_axis in joint_group if joint_axis == joint_order[i] ][0][-1]
                 # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
                 A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i][:,np.newaxis]).T[0]
-            B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S)
+            B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S) # E - A*A^T*S
 
             logger.debug("rot_list=")
             logger.debug(rot_list)
@@ -218,13 +252,13 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             logger.debug(B_theta)
             logger.debug("")
 
-            n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta)
+            n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta) # instance
 
             max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
             min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
-            max_moment_vec[np.ma.where(abs(max_moment_vec) < 10)] = 0
+            max_moment_vec[np.ma.where(abs(max_moment_vec) < 10)] = 0 # set |elements|<10 to 0
             min_moment_vec[np.ma.where(abs(min_moment_vec) < 10)] = 0
-            max_moment_vec[np.ma.where(abs(max_moment_vec) >= max_value)] = np.inf
+            max_moment_vec[np.ma.where(abs(max_moment_vec) >= max_value)] = np.inf # set |elements|>max_value to inf
             min_moment_vec[np.ma.where(abs(min_moment_vec) >= max_value)] = -np.inf
             pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
             logger.info(" max: " + str(max_moment_vec))
@@ -270,6 +304,124 @@ def set_joint_structure(_joint_structure):
     joint_structure = _joint_structure
     init_vals()
 
+def skew(vec):
+    return np.array([[0,-vec[2],vec[1]],
+                     [vec[2],0,-vec[0]],
+                     [-vec[1],vec[0],0]])
+
+class JointLoadWrenchAnalyzer():
+    def __init__(self, actuator_set_list_, robot_item_):
+        self.actuator_set_list = actuator_set_list_
+        self.robot_item = robot_item_
+        self.robot = jcu.get_robot("/home/k-kojima/catkin_ws/jaxon_tutorials/src/rtmros_hrp2/jsk_models/JAXON_RED/JAXON_REDmain.wrl") if self.robot_item is None else self.robot_item.body()
+        self.set_joint_path()
+
+        joint_index_offsets = [0,0,0,3,6,6]
+        # set max_tau in order from root using jointAxis()
+        max_tau_list = np.array([300,700,120, 0,700,0, 100,200,0]) # (hip-x,hip-y,hip-z,  nil,knee-y,nil, ankle-r,ankle-p)
+        self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(joint_index_offsets) ])
+
+        joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-120,120),(0,0)]
+        # joint_range_list = [(20,20),(70,70),(0,0), (0,0),(20,20),(0,0) ,(0,0),(0,0),(0,0)]
+        # joint_range_list = [(20,20),(-40,-40),(0,0), (0,0),(40,40),(0,0) ,(0,0),(0,0),(0,0)]
+        # joint_range_list = [(0,0),(-40,-40),(0,0), (0,0),(80,80),(0,0) ,(0,0),(-40,-40),(0,0)]
+        self.joint_range_list = np.array([ joint_range_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(joint_index_offsets) ])
+
+        # tmp
+        global max_tau_theta
+        max_tau_theta = self.max_tau
+
+    def set_joint_path(self, root_link_name=None,end_link_name=None):
+        self.root_link = self.robot.rootLink() if root_link_name is None else self.root_link
+        self.end_link = self.robot.link("LLEG_JOINT5") if end_link_name is None else self.end_link # tmp
+        self.joint_path = Body.JointPath(self.root_link, self.end_link)
+
+    # calc skeleton load wrench vertices at current pose
+    def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None): # set joint name not joint index
+        # self.robot_item.calcForwardKinematics()
+        self.robot.calcForwardKinematics()
+        if self.robot_item is not None: self.robot_item.notifyKinematicStateChange()
+
+        root_link = self.root_link if root_link_name is None else self.robot.link(root_link_name)
+        end_link = self.end_link if end_link_name is None else self.robot.link(end_link_name)
+        target_link = self.robot.link(target_link_name)
+
+        # calc selection matrix
+        target_link_idx = self.joint_path.indexOf(target_link)
+        num_adjacent_actuator_set = self.actuator_set_list[target_link_idx]
+        diag_vec = np.array([i < target_link_idx + num_adjacent_actuator_set[1] + 1 for i in range(self.joint_path.numJoints())]) * np.array([i > target_link_idx - num_adjacent_actuator_set[0] for i in range(self.joint_path.numJoints())]).astype(np.int)
+        self.S = 0.99 * np.diag(diag_vec)
+
+        Jre = Body.JointPath(root_link, end_link).calcJacobian() # root->end
+        Jri = Body.JointPath(root_link, target_link).calcJacobian() # root->i
+        Jie = Body.JointPath(target_link, end_link).calcJacobian() # i->end
+
+        R2i = np.r_[ np.c_[target_link.R,np.zeros((3,3))],
+                     np.c_[np.zeros((3,3)), target_link.R] ]
+
+        J6ei = np.r_[ np.c_[ np.eye(3),-skew(target_link.p-end_link.p) ], # [ [E,rx] , [0,E] ]
+                      np.c_[ np.zeros((3,3)),np.eye(3) ] ]
+
+        Ji_tilde = np.c_[ Jri, J6ei.dot(Jie) ] # [Jri J6ei*Jie]
+        G = np.eye(self.joint_path.numJoints()) # tmp E
+        A_theta = np.diag([0,0,0, 1,1,1]).dot(Jre)
+        # A_t = np.diag([0,0,0, 1,1,1]).dot(Jre)
+
+        self.Jre = Jre
+        self.Jri = Jri
+        self.J6ei = J6ei
+        self.Ji_tilde = Ji_tilde
+        self.R2i = R2i
+
+        return convert_to_skeleton_moment_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
+        # return convert_to_skeleton_moment_vertices( Jre.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
+
+    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, do_wait=None, division_num=None, tm=None):
+        if joint_idx is None:
+            joint_idx = 0
+            self.max_load_wrench = np.zeros(6)
+            self.min_load_wrench = np.zeros(6)
+        if do_plot is None: do_plot = True
+        if save_plot is None: save_plot = False
+        if fname is None: fname = ""
+        if is_instant is None: is_instant = True
+        if do_wait is None: do_wait = False
+        if division_num is None: division_num = 1
+        if tm is None: tm = 0.2
+
+        joint_range = self.joint_range_list[joint_idx]
+
+        for joint_angle in np.linspace(joint_range[0],joint_range[1],division_num):
+            self.robot.link(self.joint_path.joint(joint_idx).name()).q = np.deg2rad(joint_angle) # set joint angle [rad]
+            if joint_idx+1 < self.joint_path.numJoints():
+                self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,do_wait=do_wait,division_num=division_num,tm=tm)
+            else:
+                logger.info("joint angles:"+str([np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q) for idx in range(self.joint_path.numJoints())]))
+                n_vertices = self.calc_current_load_wrench_vertices(target_joint_name)
+                logger.debug("n_vertices=")
+                logger.debug(n_vertices[:,3:])
+
+                self.max_load_wrench = np.vstack([n_vertices, self.max_load_wrench]).max(axis=0)
+                self.min_load_wrench = np.vstack([n_vertices, self.min_load_wrench]).min(axis=0)
+                self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
+                self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) < 10)] = 0
+                self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
+                self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) >= max_value)] = -np.inf
+
+                pi.max_moment_text.set_text("max moments = " + str(self.max_load_wrench[3:]) + " [Nm]")
+                logger.info(" max: " + str(self.max_load_wrench))
+                logger.info(" min: " + str(self.min_load_wrench))
+                if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
+
+                if do_wait:
+                    logger.critical("RET to continue, q to escape")
+                    key = raw_input()
+                    if key == 'q': escape = True
+                else:
+                    time.sleep(tm)
+
+
+
 max_value = 10000
 joint_name_list = ("hip-x", "hip-y", "hip-z")
 joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
@@ -282,7 +434,8 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 # joint_range_list = np.array([(60,60),(45,45),(0,0)]) # roll, pitch, yaw
 # joint_range_list = [(-30,30),(-45,45),(0,0)] # roll, pitch, yaw
 # max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
-max_tau_list = np.array([300,700,120]) # roll, pitch, yaw
+# max_tau_list = np.array([300,700,120]) # roll, pitch, yaw
+max_tau_list = np.array([300,700,120,700,100,100]) # roll, pitch, yaw
 # max_tau_list = np.array([330,750,120]) # roll, pitch, yaw 426,750,607
 
 pi = PlotInterface()
@@ -312,34 +465,43 @@ if __name__ == '__main__':
     pi.ax.set_ylim3d(-max_display_num,max_display_num)
     pi.ax.set_zlim3d(-max_display_num,max_display_num)
 
-    joint_range_list = [(0,0),(0,0),(0,0)]
-    set_joint_structure([[2],[0],[1],[]])
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="initial-skeleton-load-moment-solid.png")
+    # joint_range_list = [(0,0),(0,0),(0,0)]
+    # set_joint_structure([[2],[0],[1],[]])
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="initial-skeleton-load-moment-solid.png")
 
-    joint_range_list = [(35,35),(100,100),(20,20)]
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zxy.png")
+    # joint_range_list = [(35,35),(100,100),(20,20)]
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
+    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zxy.png")
 
-    set_joint_structure([[2],[1],[0],[]])
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zyx.png")
+    # set_joint_structure([[2],[1],[0],[]])
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
+    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zyx.png")
 
 
-    joint_range_list = [(20,20),(70,70),(0,0)]
-    max_display_num = 500
-    pi.ax.set_xlim3d(-max_display_num,max_display_num)
-    pi.ax.set_ylim3d(-max_display_num,max_display_num)
-    pi.ax.set_zlim3d(-max_display_num,max_display_num)
+    # joint_range_list = [(20,20),(70,70),(0,0)]
+    # max_display_num = 500
+    # pi.ax.set_xlim3d(-max_display_num,max_display_num)
+    # pi.ax.set_ylim3d(-max_display_num,max_display_num)
+    # pi.ax.set_zlim3d(-max_display_num,max_display_num)
 
-    set_joint_structure([[2],[0],[1],[]])
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_rotational.png")
+    # set_joint_structure([[2],[0],[1],[]])
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_rotational.png")
 
-    set_joint_structure([[2],[0],[1]])
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_tendon.png")
+    # set_joint_structure([[2],[0],[1]])
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_tendon.png")
 
-    set_joint_structure([[2],[0,1]])
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_linear.png")
+    # set_joint_structure([[2],[0,1]])
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_linear.png")
+
+
+    analyzer = JointLoadWrenchAnalyzer([0,0,(0,0),0,0,0], None)
+    n_vertices = analyzer.calc_current_load_wrench_vertices('LLEG_JOINT2')
+    # analyzer.calc_whole_range_max_load_wrench('LLEG_JOINT2', division_num=9, do_wait=False)
+    analyzer.calc_whole_range_max_load_wrench('LLEG_JOINT2', division_num=3, do_wait=False, tm=0, do_plot=False)
+
+    # analyzer = JointLoadWrenchAnalyzer([0,0,(1,1),0,0,0], None)
+    # analyzer = JointLoadWrenchAnalyzer([0,0,(2,1),0,0,0], None)
