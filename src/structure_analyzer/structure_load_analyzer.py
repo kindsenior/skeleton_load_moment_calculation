@@ -385,7 +385,6 @@ class JointLoadWrenchAnalyzer():
         self.R2i = R2i
 
         return convert_to_skeleton_moment_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
-        # return convert_to_skeleton_moment_vertices( Jre.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
 
     def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, do_wait=None, division_num=None, tm=None):
         if joint_idx is None:
