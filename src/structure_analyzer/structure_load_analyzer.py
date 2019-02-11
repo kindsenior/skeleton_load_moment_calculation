@@ -153,9 +153,19 @@ class PlotInterface():
 
 def convert_to_skeleton_moment_vertices(A_, B_):
     num_joints = A_.shape[1]
-    load_dim = 6 # needless?
+    load_dim = A_.shape[0]
+    try:
+        joint_order
+        if load_dim == 3:
+            max_tau_theta = max_tau[:load_dim].reshape(load_dim)
+        else:
+            max_tau_theta = max_tau
+    except NameError:
+        max_tau_theta = max_tau
+    # load_dim = 6 # needless?
     # load_dim = 3 # needless?
     # max_tau_theta = (max_tau/abs(A_.dot(A_.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
+    logger.debug("max_tau="+str(max_tau))
     logger.debug("max_tau_theta=" + str(max_tau_theta))
     # tau convex hull H->V
     A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
