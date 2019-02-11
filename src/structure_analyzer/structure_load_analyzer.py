@@ -36,18 +36,26 @@ logger.propagate = False
 import jsk_choreonoid.util as jcu
 
 def h2v(A,b):
-    # inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
-    inmat = cdd.Matrix(np.hstack([b.astype(np.float16),-A.astype(np.float16)]), number_type='float')
-    inmat.rep_type = cdd.RepType.INEQUALITY
-    poly = cdd.Polyhedron(inmat)
+    try:
+        inmat = cdd.Matrix(np.hstack([b,-A]), number_type='float')
+        inmat.rep_type = cdd.RepType.INEQUALITY
+        poly = cdd.Polyhedron(inmat)
+    except RuntimeError:
+        inmat = cdd.Matrix(np.hstack([b.astype(np.float16),-A.astype(np.float16)]), number_type='float')
+        inmat.rep_type = cdd.RepType.INEQUALITY
+        poly = cdd.Polyhedron(inmat)
     retmat = poly.get_generators()
     return inmat, poly, retmat
 
 def v2h(flags,vertices):
-    # inmat = cdd.Matrix(np.hstack([flags, vertices]), number_type='float')
-    inmat = cdd.Matrix(np.hstack([flags, vertices.astype(np.float16)]), number_type='float')
-    inmat.rep_type = cdd.RepType.GENERATOR
-    poly = cdd.Polyhedron(inmat)
+    try:
+        inmat = cdd.Matrix(np.hstack([flags, vertices]), number_type='float')
+        inmat.rep_type = cdd.RepType.GENERATOR
+        poly = cdd.Polyhedron(inmat)
+    except RuntimeError:
+        inmat = cdd.Matrix(np.hstack([flags, vertices.astype(np.float16)]), number_type='float')
+        inmat.rep_type = cdd.RepType.GENERATOR
+        poly = cdd.Polyhedron(inmat)
     retmat = poly.get_inequalities()
     return inmat, poly, retmat
 
