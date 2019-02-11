@@ -394,10 +394,11 @@ class JointLoadWrenchAnalyzer():
 
         joint_name = self.joint_path.joint(joint_idx).name()
         joint_range = self.joint_range_list[joint_idx]
+        division_num_ = 1 if joint_range[0] == joint_range[1] else division_num
 
         if joint_idx < self.joint_path.numJoints(): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
         if joint_idx+1 == self.joint_path.numJoints(): print(" changed")
-        for joint_angle in np.linspace(joint_range[0],joint_range[1],division_num):
+        for joint_angle in np.linspace(joint_range[0],joint_range[1],division_num_):
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints():
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,do_wait=do_wait,division_num=division_num,tm=tm)
