@@ -65,12 +65,12 @@ class PlotInterface():
         self.ax = self.fig.gca(projection='3d')
         self.fig.subplots_adjust(left=0.02,right=0.98, bottom=0.02,top=0.98, wspace=0.1, hspace=1)
 
-        # self._text_pos = [-0.095,0.06]
-        # self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*i,"", fontsize=25) for i in range(3)]
-        # self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*len(self.joint_angle_texts), "max moment =", fontsize=25)
+        self._text_pos = [-0.095,0.06]
+        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*i,"", fontsize=25) for i in range(3)]
+        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*len(self.joint_angle_texts), "", fontsize=25)
         self._text_pos = [-0.095,0.08]
-        self.joint_angle_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*0,"joint angle =", fontsize=25)
-        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*1, "max moment =", fontsize=25)
+        self.joint_angle_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*0,"", fontsize=25)
+        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*1, "", fontsize=25)
 
         self.max_display_num = 1500
         self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
