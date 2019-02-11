@@ -57,9 +57,12 @@ class PlotInterface():
         self.ax = self.fig.gca(projection='3d')
         self.fig.subplots_adjust(left=0.02,right=0.98, bottom=0.02,top=0.98, wspace=0.1, hspace=1)
 
-        self._text_pos = [-0.095,0.06]
-        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*i,"", fontsize=25) for i in range(3)]
-        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*len(self.joint_angle_texts), "max moment =", fontsize=25)
+        # self._text_pos = [-0.095,0.06]
+        # self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*i,"", fontsize=25) for i in range(3)]
+        # self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*len(self.joint_angle_texts), "max moment =", fontsize=25)
+        self._text_pos = [-0.095,0.08]
+        self.joint_angle_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*0,"joint angle =", fontsize=25)
+        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*1, "max moment =", fontsize=25)
 
         self.max_display_num = 1500
         self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
@@ -230,7 +233,7 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             child_joint_axis = np.identity(3)[:,child_joint_idx]
             for idx, child_joint_angle in enumerate(np.linspace(child_joint_range[0], child_joint_range[1], division_num)):
                 logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
-                pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
+                # pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
                 rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
                 max_moment_vec, min_moment_vec, escape = sweep_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait=dowait, division_num=division_num, tm=tm, escape=escape, plot=plot,
                                                                                 save_plot=save_plot, fname=fname.replace(".","-"+str(idx)+"."), isInstant=isInstant)
@@ -399,7 +402,9 @@ class JointLoadWrenchAnalyzer():
             if joint_idx+1 < self.joint_path.numJoints():
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,do_wait=do_wait,division_num=division_num,tm=tm)
             else:
-                logger.info("joint angles:"+str([np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q) for idx in range(self.joint_path.numJoints())]))
+                joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
+                pi.joint_angle_text.set_text(joint_angle_text)
+                logger.info(joint_angle_text)
                 n_vertices = self.calc_current_load_wrench_vertices(target_joint_name)
                 logger.debug("n_vertices=")
                 logger.debug(n_vertices[:,3:])
@@ -451,7 +456,7 @@ def export_snapshot():
     pi.ax.set_zlim3d(-max_display_num,max_display_num)
     joint_range_list = [(-30,60),(0,80),(-90,90)]
     set_joint_structure([[2],[1],[0],[]])
-    pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
+    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="total-skeleton-load-moment-solid/total-skeleton-load-moment-solid.png", isInstant=False)
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="instant-skeleton-load-moment-solid/instant-skeleton-load-moment-solid.png")
 
