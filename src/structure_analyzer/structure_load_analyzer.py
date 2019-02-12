@@ -27,9 +27,10 @@ import cnoid.Body as Body
 from logging import getLogger, StreamHandler, DEBUG, INFO, WARNING, ERROR, CRITICAL
 logger = getLogger(__name__)
 handler = StreamHandler()
-handler.setLevel(DEBUG)
+# handler.setLevel(DEBUG)
 # logger.setLevel(DEBUG)
-logger.setLevel(INFO)
+# logger.setLevel(INFO)
+logger.setLevel(ERROR)
 logger.addHandler(handler)
 logger.propagate = False
 
@@ -114,7 +115,7 @@ class PlotInterface():
             logger.debug("simplices")
             logger.debug(hull.simplices)
         except qhull.QhullError:
-            logger.critical(Fore.RED+'!QhullError!'+Style.RESET_ALL)
+            logger.error(Fore.RED+'!QhullError!'+Style.RESET_ALL)
             return
 
         for idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
@@ -137,7 +138,7 @@ class PlotInterface():
 
                 self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
             except RuntimeError:
-                logger.critical(Fore.RED+'RuntimeError (provably "Error in qhull Delaunay triangulation calculation")'+Style.RESET_ALL)
+                logger.error(Fore.RED+'RuntimeError (provably "Error in qhull Delaunay triangulation calculation")'+Style.RESET_ALL)
                 logger.debug(str(idx)+" face: "+str(face_indices))
                 logger.debug("x,y,z= "+str(x)+", "+str(y)+", "+str(z))
 
@@ -173,7 +174,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = h2v(A,b)
     except RuntimeError:
-        logger.critical(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
+        logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
         return np.array([range(6)])
 
     logger.debug("max_tau")
@@ -186,7 +187,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
     except RuntimeError:
-        logger.critical(Fore.RED+'!!!!!RuntimeError (v2h())!!!!!'+Style.RESET_ALL)
+        logger.error(Fore.RED+'!!!!!RuntimeError (v2h())!!!!!'+Style.RESET_ALL)
         return np.array([range(6)])
     logger.debug("tau_tilde")
     logger.debug(retmat)
@@ -201,7 +202,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     try:
         inmat, poly, retmat = h2v(A,b)
     except RuntimeError:
-        logger.critical(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
+        logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
         return np.array([range(6)])
 
     logger.debug("final")
@@ -413,8 +414,8 @@ class JointLoadWrenchAnalyzer():
         joint_range = self.joint_range_list[joint_idx]
         division_num_ = 1 if joint_range[0] == joint_range[1] else division_num
 
-        if joint_idx < self.joint_path.numJoints(): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
-        if joint_idx+1 == self.joint_path.numJoints(): print(" changed")
+        if joint_idx < self.joint_path.numJoints() and logger.isEnabledFor(INFO): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
+        if joint_idx+1 == self.joint_path.numJoints() and logger.isEnabledFor(INFO): print(" changed")
         for joint_angle in np.linspace(joint_range[0],joint_range[1],division_num_):
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints():
