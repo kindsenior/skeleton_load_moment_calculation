@@ -354,10 +354,6 @@ class JointLoadWrenchAnalyzer():
         # joint_range_list = [(0,0),(-40,-40),(0,0), (0,0),(80,80),(0,0) ,(0,0),(-40,-40),(0,0)]
         self.joint_range_list = np.array([ joint_range_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(joint_index_offsets) ])
 
-        # tmp
-        global max_tau_theta
-        max_tau_theta = self.max_tau
-
     def set_joint_path(self, root_link_name=None,end_link_name=None):
         self.root_link = self.robot.rootLink() if root_link_name is None else self.robot.link(root_link_name)
         self.end_link = self.robot.link("LLEG_JOINT5") if end_link_name is None else self.robot.link(end_link_name)
@@ -394,6 +390,11 @@ class JointLoadWrenchAnalyzer():
         G = np.eye(self.joint_path.numJoints()) # tmp E
         A_theta = np.diag([0,0,0, 1,1,1]).dot(Jre)
         # A_t = np.diag([0,0,0, 1,1,1]).dot(Jre)
+
+        axis_mat = A_theta[3:]
+        global max_tau
+        max_tau = (self.max_tau/abs(axis_mat.T.dot(axis_mat))).min(axis=1) # tau_j = min_i(tau_i/|a_j.a_i|)
+        # max_tau = (self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat))).min(axis=1) # tau_j = min_i(tau_i/|a_j.a_i|)
 
         self.Jre = Jre
         self.Jri = Jri
