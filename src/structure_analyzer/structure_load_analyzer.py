@@ -403,6 +403,7 @@ class JointLoadWrenchAnalyzer():
         self.J6ei = J6ei
         self.Ji_tilde = Ji_tilde
         self.R2i = R2i
+        self.A_theta = A_theta
 
         return convert_to_skeleton_moment_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
 
@@ -455,8 +456,6 @@ class JointLoadWrenchAnalyzer():
                     if key == 'q': escape = True
                 else:
                     time.sleep(tm)
-
-
 
 max_value = 10000
 joint_name_list = ("hip-x", "hip-y", "hip-z")
