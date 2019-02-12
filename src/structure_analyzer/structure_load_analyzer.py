@@ -332,11 +332,16 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer():
-    def __init__(self, actuator_set_list_, robot_item_):
+    def __init__(self, actuator_set_list_, robot_item=None, robot_model_file=None, end_link_name=None):
         self.actuator_set_list = actuator_set_list_
-        self.robot_item = robot_item_
-        self.robot = jcu.get_robot("/home/k-kojima/catkin_ws/jaxon_tutorials/src/rtmros_hrp2/jsk_models/JAXON_RED/JAXON_REDmain.wrl") if self.robot_item is None else self.robot_item.body()
-        self.set_joint_path()
+        self.robot_item = robot_item
+        self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
+        self.robot = jcu.get_robot(self.robot_model_file) if self.robot_item is None else self.robot_item.body()
+        logger.info("robot model name: "+str(self.robot.modelName()))
+        if end_link_name is None: end_link_name = "LLEG_JOINT5"
+        self.set_joint_path(end_link_name=end_link_name)
+
+        self.axis_product_mat = reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
 
         joint_index_offsets = [0,0,0,3,6,6]
         # set max_tau in order from root using jointAxis()
@@ -354,8 +359,9 @@ class JointLoadWrenchAnalyzer():
         max_tau_theta = self.max_tau
 
     def set_joint_path(self, root_link_name=None,end_link_name=None):
-        self.root_link = self.robot.rootLink() if root_link_name is None else self.root_link
-        self.end_link = self.robot.link("LLEG_JOINT5") if end_link_name is None else self.end_link # tmp
+        self.root_link = self.robot.rootLink() if root_link_name is None else self.robot.link(root_link_name)
+        self.end_link = self.robot.link("LLEG_JOINT5") if end_link_name is None else self.robot.link(end_link_name)
+        logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath(self.root_link, self.end_link)
 
     # calc skeleton load wrench vertices at current pose
