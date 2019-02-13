@@ -214,6 +214,7 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     return n_vertices
 
 def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_plot=None, fname=None, isInstant=None):
+    logger.info("joint_structure:" + str(joint_structure))
     if division_num is None:
         division_num = 5
 
@@ -238,8 +239,7 @@ def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_p
 
 def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num, dowait, tm, plot, save_plot, fname, isInstant, escape=None):
     logger.debug("sweep_joint_range_impl()")
-    # print "child_joint_indices="
-    # print child_joint_indices
+    logger.info("child_joint_indices="+str(child_joint_indices))
     logger.debug("")
 
     if escape is None: escape = False
@@ -252,6 +252,7 @@ def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_mo
             child_joint_idx = child_joint_indices[1] # x/y/z = 0/1/2
             child_joint_range = joint_range_list[child_joint_idx]
             child_joint_axis = np.identity(3)[:,child_joint_idx]
+            logger.info("child_joint_range="+str(child_joint_range))
             for idx, child_joint_angle in enumerate(np.linspace(child_joint_range[0], child_joint_range[1], division_num)):
                 logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
                 # pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
