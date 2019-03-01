@@ -426,7 +426,7 @@ PROTO Humanoid [
   }
 }
 
-DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
+DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_X-Y Humanoid {
   humanoidBody [
     DEF WAIST Joint {
       jointType "free"
@@ -527,9 +527,9 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                                          rotation 0 0 1 0
                                          diffuseColor 0.5 0.5 0.5
                                       }
-                                      DEF LINK4_FORK ForkLinkY {
+                                      DEF LINK4_FORK ForkLinkX {
                                          translation 0 0 0.4
-                                         rotation 0 1 0 3.14159265359
+                                         rotation 1 0 0 3.14159265359
                                       }
                                    ]
                                 } #Segment LINK3
@@ -538,7 +538,7 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                                    rotation 1 0 0 0
                                    jointId 4
                                    jointType "rotate"
-                                   jointAxis 0 1 0
+                                   jointAxis 1 0 0
                                    children [
                                       DEF LINK4 Segment {
                                          mass 1
@@ -557,14 +557,14 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                                          rotation 1 0 0 0
                                          jointId 5
                                          jointType "rotate"
-                                         jointAxis 1 0 0
+                                         jointAxis 0 1 0
                                          children [
                                             DEF LINK5 Segment {
                                                mass 1
                                                centerOfMass 0 0 0
                                                momentsOfInertia [1 0 0 0 1 0 0 0 1]
                                                children [
-                                                  DEF LINK4_FORK ForkLinkX {
+                                                  DEF LINK4_FORK ForkLinkY {
                                                      translation 0 0 0
                                                      rotation 1 0 0 0
                                                   }
@@ -603,7 +603,7 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
     USE LINK4,
     USE LINK5,
   ]
-  name "UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X"
+  name "UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_X-Y"
   info [
   ]
 }

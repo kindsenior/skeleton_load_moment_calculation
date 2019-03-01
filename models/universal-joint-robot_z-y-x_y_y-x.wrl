@@ -64,6 +64,8 @@ PROTO CylinderLinkZ [
  exposedField    SFFloat    height          0.1
  exposedField    SFVec3f    translation     0 0 0
  exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    0 0 1 # blue
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
  exposedField    MFNode     children        [ ]
 ]
 {
@@ -81,7 +83,10 @@ PROTO CylinderLinkZ [
                      height IS height
                   }
                   appearance Appearance {
-                     material Material {}
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
                   }
                }
             ]
@@ -407,8 +412,8 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-Y-X_Y_Y-X Humanoid {
           centerOfMass 0 0 0
           momentsOfInertia [1 0 0 0 1 0 0 0 1]
           children [
-            DEF BODY_BOX BoxLinkZ {
-               translation 0 0 -0.1
+            DEF BODY_CYLINDER CylinderLinkZ {
+               translation 0 0 0
                rotation 1 0 0 0
                diffuseColor 0.5 0.5 0.5
             }

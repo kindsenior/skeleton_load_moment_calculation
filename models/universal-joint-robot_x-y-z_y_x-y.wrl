@@ -1,31 +1,5 @@
 #VRML V2.0 utf8
 
-EXTERNPROTO Joint [
-  exposedField     SFVec3f      center
-  exposedField     MFNode       children
-  exposedField     MFFloat      llimit
-  exposedField     MFFloat      lvlimit
-  exposedField     SFRotation   limitOrientation
-  exposedField     SFString     name
-  exposedField     SFRotation   rotation
-  exposedField     SFVec3f      scale
-  exposedField     SFRotation   scaleOrientation
-  exposedField     MFFloat      stiffness
-  exposedField     SFVec3f      translation
-  exposedField     MFFloat      ulimit
-  exposedField     MFFloat      uvlimit
-  exposedField     MFFloat      climit
-  exposedField     SFString     jointType
-  exposedField     SFInt32      jointId
-  exposedField     SFVec3f      jointAxis
-
-  exposedField     SFFloat      gearRatio
-  exposedField     SFFloat      rotorInertia
-  exposedField     SFFloat      rotorResistor
-  exposedField     SFFloat      torqueConst
-  exposedField     SFFloat      encoderPulse
-] "common.wrl#Joint"
-
 PROTO Joint [
   exposedField     SFVec3f      center              0 0 0
   exposedField     MFNode       children            []
@@ -86,12 +60,12 @@ PROTO Segment [
 }
 
 PROTO CylinderLinkZ [
- exposedField    SFFloat    radius          0.05
+ exposedField    SFFloat    radius          0.07
  exposedField    SFFloat    height          0.1
  exposedField    SFVec3f    translation     0 0 0
  exposedField    SFRotation rotation        0 0 1 0
- exposedField    SFColor    diffuseColor    0 0 1 # blue
- exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    SFColor    diffuseColor    0.3 0.3 1
+ exposedField    SFColor    specularColor   1 1 1
  exposedField    MFNode     children        [ ]
 ]
 {
@@ -100,7 +74,7 @@ PROTO CylinderLinkZ [
       rotation IS rotation
       children [
          Transform {
-            translation 0 0 -0.05
+            translation 0 0 0.05
             rotation 1 0 0 1.57079632679
             children [
                DEF JointZ Shape {
@@ -426,7 +400,7 @@ PROTO Humanoid [
   }
 }
 
-DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
+DEF UNIVERSAL-JOINT-ROBOT_X-Y-Z_Y_X-Y Humanoid {
   humanoidBody [
     DEF WAIST Joint {
       jointType "free"
@@ -438,46 +412,46 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
           centerOfMass 0 0 0
           momentsOfInertia [1 0 0 0 1 0 0 0 1]
           children [
-            DEF BODY_CYLINDER CylinderLinkZ {
-               translation 0 0 0
-               rotation 1 0 0 0
-               diffuseColor 0.5 0.5 0.5
+            DEF BODY_BOX ForkLinkX {
+               translation 0 0 0.1
+               rotation 1 0 0 3.14159265359
             }
           ]
         } #Segment BODY
         DEF JOINT0 Joint {
-           translation 0 0 0
+           translation 0 0 0.1
            rotation 0 0 1 0
            jointId 0
            jointType "rotate"
-           jointAxis 0 0 1
+           jointAxis 1 0 0
            children [
               DEF LINK0 Segment {
                  mass 1
                  centerOfMass 0 0 0
                  momentsOfInertia [1 0 0 0 1 0 0 0 1]
                  children [
-                    DEF LINK0_FORKZ ForkLinkZ {
+                    DEF LINK0_BOX BoxLinkX {
                        translation 0 0 0
-                       rotation 0 0 1 1.57079632679
+                       rotation 0 0 1 0
+                       diffuseColor 0.8 0.8 0
                     }
                  ]
               } #Segment LINK0
               DEF JOINT1 Joint {
-                 translation 0 0 0.1
+                 translation 0 0 0
                  rotation 0 1 0 0
                  jointId 1
                  jointType "rotate"
-                 jointAxis 1 0 0
+                 jointAxis 0 1 0
                  children [
                     DEF LINK1 Segment {
                        mass 1
                        centerOfMass 0 0 0
                        momentsOfInertia [1 0 0 0 1 0 0 0 1]
                        children [
-                          DEF LINK1_BOX BoxLinkX {
+                          DEF LINK1_FORK ForkLinkY {
                              translation 0 0 0
-                             rotation 1 0 0 0
+                             rotation 0 0 1 0
                           }
                        ]
                     } #Segment LINK1
@@ -486,20 +460,20 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                        rotation 0 1 0 0
                        jointId 2
                        jointType "rotate"
-                       jointAxis 0 1 0
+                       jointAxis 0 0 1
                        children [
                           DEF LINK2 Segment {
                              mass 1
                              centerOfMass 0 0 0
                              momentsOfInertia [1 0 0 0 1 0 0 0 1]
                              children [
-                                DEF LINK2_FORK ForkLinkY {
-                                   translation 0 0 0
+                                DEF LINK2_FORK CylinderLinkZ {
+                                   translation 0 0 0.1
                                    rotation 0 0 1 0
                                 }
                                 DEF LINK2_BOX BoxLinkX {
-                                   size 0.1 0.1 0.2
-                                   translation 0 0 0.2 # 0.1 + 0.1
+                                   size 0.1 0.1 0.1
+                                   translation 0 0 0.25 # 0.2 + 0.05
                                    rotation 0 0 1 0
                                    diffuseColor 0.5 0.5 0.5
                                 }
@@ -527,9 +501,9 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                                          rotation 0 0 1 0
                                          diffuseColor 0.5 0.5 0.5
                                       }
-                                      DEF LINK4_FORK ForkLinkY {
+                                      DEF LINK4_FORK ForkLinkX {
                                          translation 0 0 0.4
-                                         rotation 0 1 0 3.14159265359
+                                         rotation 1 0 0 3.14159265359
                                       }
                                    ]
                                 } #Segment LINK3
@@ -538,7 +512,7 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                                    rotation 1 0 0 0
                                    jointId 4
                                    jointType "rotate"
-                                   jointAxis 0 1 0
+                                   jointAxis 1 0 0
                                    children [
                                       DEF LINK4 Segment {
                                          mass 1
@@ -557,14 +531,14 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
                                          rotation 1 0 0 0
                                          jointId 5
                                          jointType "rotate"
-                                         jointAxis 1 0 0
+                                         jointAxis 0 1 0
                                          children [
                                             DEF LINK5 Segment {
                                                mass 1
                                                centerOfMass 0 0 0
                                                momentsOfInertia [1 0 0 0 1 0 0 0 1]
                                                children [
-                                                  DEF LINK4_FORK ForkLinkX {
+                                                  DEF LINK4_FORK ForkLinkY {
                                                      translation 0 0 0
                                                      rotation 1 0 0 0
                                                   }
@@ -603,7 +577,7 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X Humanoid {
     USE LINK4,
     USE LINK5,
   ]
-  name "UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X"
+  name "UNIVERSAL-JOINT-ROBOT_X-Y-Z_Y_X-Y"
   info [
   ]
 }
