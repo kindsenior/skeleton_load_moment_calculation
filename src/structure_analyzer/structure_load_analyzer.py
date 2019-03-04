@@ -384,7 +384,7 @@ class JointLoadWrenchAnalyzer():
         self.max_load_wrench = np.zeros(6)
         self.min_load_wrench = np.zeros(6)
 
-    # calc skeleton load wrench vertices at current pose
+    # calc frame load wrench vertices at current pose
     def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None): # set joint name not joint index
         # self.robot_item.calcForwardKinematics()
         self.robot.calcForwardKinematics()
@@ -533,11 +533,11 @@ def export_joint_configuration_comparison():
     global analyzer0
     joint_configuration_str0="z-x-y_y_y-x"
     analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                                end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str0+".wrl"))
+                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str0+".wrl"))
     global analyzer1
     joint_configuration_str1="z-y-x_y_y-x"
     analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                                end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str1+".wrl"))
+                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str1+".wrl"))
     target_end = analyzer0.joint_path.endLink()
 
     common_fname=os.path.join(package_path,"joint-configuration-comparison")
@@ -552,7 +552,7 @@ def export_joint_configuration_comparison():
         scene_widget = Base.SceneView.instance().sceneWidget()
 
         l_angle = np.array([0,-70,-40,30,0,0])
-        u_angle = np.array([90,0,-80,90,0,0])
+        u_angle = np.array([90,5,-80,90,0,0])
         analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
         analyzer1.robot.calcForwardKinematics()
         common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
