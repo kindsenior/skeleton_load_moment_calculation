@@ -25,6 +25,7 @@ import pdb
 import roslib
 
 import cnoid.Body as Body
+import cnoid.Base as Base
 
 from logging import getLogger, StreamHandler, DEBUG, INFO, WARNING, ERROR, CRITICAL
 logger = getLogger(__name__)
@@ -37,6 +38,7 @@ logger.addHandler(handler)
 logger.propagate = False
 
 import jsk_choreonoid.util as jcu
+import jsk_choreonoid.body_util
 
 def h2v(A,b):
     try:
@@ -427,6 +429,33 @@ class JointLoadWrenchAnalyzer():
 
         return convert_to_skeleton_moment_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
 
+    def calc_max_frame_load_wrench(self, target_joint_name, do_plot=None, save_plot=None, fname=None, is_instant=None, do_wait=None, tm=None):
+        joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
+        pi.joint_angle_text.set_text(joint_angle_text)
+        logger.info(joint_angle_text)
+        n_vertices = self.calc_current_load_wrench_vertices(target_joint_name)
+        logger.debug("n_vertices=")
+        logger.debug(n_vertices[:,3:])
+
+        self.max_load_wrench = np.vstack([n_vertices, self.max_load_wrench]).max(axis=0)
+        self.min_load_wrench = np.vstack([n_vertices, self.min_load_wrench]).min(axis=0)
+        self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
+        self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) < 10)] = 0
+        self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
+        self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) >= max_value)] = -np.inf
+
+        pi.max_moment_text.set_text("max moments = " + str(self.max_load_wrench[3:].astype(np.int)) + " [Nm]")
+        logger.info(" max: " + str(self.max_load_wrench))
+        logger.info(" min: " + str(self.min_load_wrench))
+        if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
+
+        if do_wait:
+            logger.critical("RET to continue, q to escape"+Style.RESET_ALL)
+            key = raw_input()
+            if key == 'q': escape = True
+        else:
+            time.sleep(tm)
+
     def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, do_wait=None, division_num=None, tm=None):
         if joint_idx is None:
             joint_idx = 0
@@ -450,31 +479,7 @@ class JointLoadWrenchAnalyzer():
             if joint_idx+1 < self.joint_path.numJoints():
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,do_wait=do_wait,division_num=division_num,tm=tm)
             else:
-                joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
-                pi.joint_angle_text.set_text(joint_angle_text)
-                logger.info(joint_angle_text)
-                n_vertices = self.calc_current_load_wrench_vertices(target_joint_name)
-                logger.debug("n_vertices=")
-                logger.debug(n_vertices[:,3:])
-
-                self.max_load_wrench = np.vstack([n_vertices, self.max_load_wrench]).max(axis=0)
-                self.min_load_wrench = np.vstack([n_vertices, self.min_load_wrench]).min(axis=0)
-                self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
-                self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) < 10)] = 0
-                self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
-                self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) >= max_value)] = -np.inf
-
-                pi.max_moment_text.set_text("max moments = " + str(self.max_load_wrench[3:]) + " [Nm]")
-                logger.info(" max: " + str(self.max_load_wrench))
-                logger.info(" min: " + str(self.min_load_wrench))
-                if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
-
-                if do_wait:
-                    logger.critical("RET to continue, q to escape"+Style.RESET_ALL)
-                    key = raw_input()
-                    if key == 'q': escape = True
-                else:
-                    time.sleep(tm)
+                self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,do_wait=do_wait,tm=tm)
 
 max_value = 10000
 joint_name_list = ("hip-x", "hip-y", "hip-z")
@@ -517,10 +522,63 @@ def export_snapshot():
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="total-skeleton-load-moment-solid/total-skeleton-load-moment-solid.png", isInstant=False)
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="instant-skeleton-load-moment-solid/instant-skeleton-load-moment-solid.png")
 
+def export_joint_configuration_comparison():
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
+
+    joint_range_list = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
+
+    global analyzer0
+    joint_configuration_str0="z-x-y_y_y-x"
+    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+                                                end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str0+".wrl"))
+    global analyzer1
+    joint_configuration_str1="z-y-x_y_y-x"
+    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+                                                end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str1+".wrl"))
+    target_end = analyzer0.joint_path.endLink()
+
+    common_fname=os.path.join(package_path,"joint-configuration-comparison")
+
+    analyzer0.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
+    analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
+    logger.critical(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+
+    if analyzer0.world.is_choreonoid:
+        tree_view = Base.ItemTreeView.instance()
+        message_view = Base.MessageView.instance()
+        scene_widget = Base.SceneView.instance().sceneWidget()
+
+        l_angle = np.array([0,-70,-40,30,0,0])
+        u_angle = np.array([90,0,-80,90,0,0])
+        analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
+        analyzer1.robot.calcForwardKinematics()
+        common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
+        division_num = 20
+        for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num) for langle,uangle in zip(l_angle,u_angle)]).T):
+            # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
+            index_str = "_"+str(idx).zfill(2)
+
+            analyzer0.robot.angleVector(np.deg2rad(angle_vector))
+            # FK is called in calc_max_frame_load_wrench
+            analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration0"+"_load-region"+index_str+".png")
+            # logger.info(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+
+            logger.info("IK: " + str(analyzer1.joint_path.calcInverseKinematics(target_end.p, target_end.R)))
+            analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration1"+"_load-region"+index_str+".png")
+            # logger.info(Fore.YELLOW+joint_configuration_str1+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+
+            analyzer0.world.robotItem.notifyKinematicStateChange()
+            tree_view.checkItem(analyzer0.world.robotItem, True)
+            tree_view.checkItem(analyzer1.world.robotItem, False)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_configuration0"+"_pose"+index_str+".png"))
+            tree_view.checkItem(analyzer0.world.robotItem, False)
+            tree_view.checkItem(analyzer1.world.robotItem, True)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_configuration1"+"_pose"+index_str+".png"))
+
 if __name__ == '__main__':
-
-
-
     initialize_plot_interface()
 
     # joint_range_list = [(0,0),(0,0),(0,0)]
@@ -648,3 +706,6 @@ if __name__ == '__main__':
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
+
+    # make pictures
+    export_joint_configuration_comparison()
