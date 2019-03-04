@@ -336,11 +336,11 @@ def skew(vec):
 
 class JointLoadWrenchAnalyzer():
     def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name=None):
+        self.world = jcu.World()
+        logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
+
         self.actuator_set_list = actuator_set_list_
-        self.robot_item = robot_item
-        self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
-        self.robot = jcu.get_robot(self.robot_model_file) if self.robot_item is None else self.robot_item.body()
-        logger.info("robot model name: "+str(self.robot.modelName()))
+        self.set_robot(robot_item, robot_model_file)
         if end_link_name is None: end_link_name = "LLEG_JOINT5"
         self.set_joint_path(end_link_name=end_link_name)
 
@@ -353,6 +353,18 @@ class JointLoadWrenchAnalyzer():
         self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
 
         self.set_joint_range(joint_range_list)
+
+    def set_robot(self, robot_item=None, robot_model_file=None):
+        self.robot_item = robot_item
+        self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
+        if self.robot_item is None:
+            if self.world.is_choreonoid: # in choreonoid
+                self.robot = self.world.set_robotItem(self.robot_model_file).body()
+            else: # others
+                self.robot = jcu.get_robot(self.robot_model_file)
+        else:
+            self.robot = self.robot_item.body()
+        logger.info("robot model name: "+str(self.robot.modelName()))
 
     def set_joint_path(self, root_link_name=None,end_link_name=None):
         self.root_link = self.robot.rootLink() if root_link_name is None else self.robot.link(root_link_name)
