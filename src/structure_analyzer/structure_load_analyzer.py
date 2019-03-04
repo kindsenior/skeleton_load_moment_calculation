@@ -505,6 +505,8 @@ def initialize_plot_interface():
 
     plt.rcParams["font.size"] = 25
 
+    pi.ax.view_init(30,-30) # rotate view
+
     max_display_num = 800
     pi.ax.set_xlim3d(-max_display_num,max_display_num)
     pi.ax.set_ylim3d(-max_display_num,max_display_num)
