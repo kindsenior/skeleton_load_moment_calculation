@@ -354,6 +354,8 @@ class JointLoadWrenchAnalyzer():
 
         self.set_joint_range(joint_range_list)
 
+        self.reset_max_min_wrench()
+
     def set_robot(self, robot_item=None, robot_model_file=None):
         self.robot_item = robot_item
         self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
@@ -375,6 +377,10 @@ class JointLoadWrenchAnalyzer():
     def set_joint_range(self, joint_range_list=None):
         if joint_range_list is None: joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-120,120),(0,0)] # set full range to all joint
         self.joint_range_list = np.array([ joint_range_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
+
+    def reset_max_min_wrench(self):
+        self.max_load_wrench = np.zeros(6)
+        self.min_load_wrench = np.zeros(6)
 
     # calc skeleton load wrench vertices at current pose
     def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None): # set joint name not joint index
@@ -424,8 +430,7 @@ class JointLoadWrenchAnalyzer():
     def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, do_wait=None, division_num=None, tm=None):
         if joint_idx is None:
             joint_idx = 0
-            self.max_load_wrench = np.zeros(6)
-            self.min_load_wrench = np.zeros(6)
+            self.reset_max_min_wrench()
         if do_plot is None: do_plot = True
         if save_plot is None: save_plot = False
         if fname is None: fname = ""
