@@ -492,7 +492,18 @@ joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
 max_tau_list = np.array([300,700,120,700,100,100]) # roll, pitch, yaw
 # max_tau_list = np.array([330,750,120]) # roll, pitch, yaw 426,750,607
 
-pi = PlotInterface()
+def initialize_plot_interface():
+    global pi
+    pi = PlotInterface()
+
+    np.set_printoptions(precision=5)
+
+    plt.rcParams["font.size"] = 25
+
+    max_display_num = 800
+    pi.ax.set_xlim3d(-max_display_num,max_display_num)
+    pi.ax.set_ylim3d(-max_display_num,max_display_num)
+    pi.ax.set_zlim3d(-max_display_num,max_display_num)
 
 def export_snapshot():
     global joint_range_list
@@ -507,17 +518,10 @@ def export_snapshot():
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="instant-skeleton-load-moment-solid/instant-skeleton-load-moment-solid.png")
 
 if __name__ == '__main__':
-    np.set_printoptions(precision=5)
 
-    # set_joint_structure([[2],[1],[0],[]])
-    # sweep_joint_range(division_num = 0)
 
-    plt.rcParams["font.size"] = 25
 
-    max_display_num = 800
-    pi.ax.set_xlim3d(-max_display_num,max_display_num)
-    pi.ax.set_ylim3d(-max_display_num,max_display_num)
-    pi.ax.set_zlim3d(-max_display_num,max_display_num)
+    initialize_plot_interface()
 
     # joint_range_list = [(0,0),(0,0),(0,0)]
     # set_joint_structure([[2],[0],[1],[]])
