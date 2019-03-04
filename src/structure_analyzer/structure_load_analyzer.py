@@ -580,6 +580,43 @@ def export_joint_configuration_comparison():
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_configuration1"+"_pose"+index_str+".png"))
 
+def export_drive_system_comparison():
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
+
+    joint_range_list = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
+
+    joint_configuration_str="z-x-y_y_y-x"
+    global analyzer0
+    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    global analyzer1
+    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    global analyzer1
+    analyzer2 = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+
+    l_angle = np.array([0,-70,-40,30,0,0])
+    u_angle = np.array([90,0,80,90,0,0])
+    common_fname=os.path.join(package_path,"drive-system-comparison","drive-system-comparison")
+    division_num = 20
+    for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num) for langle,uangle in zip(l_angle,u_angle)]).T):
+        # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
+        index_str = "_"+str(idx).zfill(2)
+
+        analyzer0.robot.angleVector(np.deg2rad(angle_vector))
+        analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system0"+"_load-region"+index_str+".png")
+        # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+
+        analyzer1.robot.angleVector(np.deg2rad(angle_vector))
+        analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system1"+"_load-region"+index_str+".png")
+        # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+
+        analyzer2.robot.angleVector(np.deg2rad(angle_vector))
+        analyzer2.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system2"+"_load-region"+index_str+".png")
+        # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+
 if __name__ == '__main__':
     initialize_plot_interface()
 
@@ -711,3 +748,5 @@ if __name__ == '__main__':
 
     # make pictures
     export_joint_configuration_comparison()
+
+    export_drive_system_comparison()
