@@ -224,7 +224,7 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer():
-    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name=None):
+    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name=None, step_angle_list=None, step_angle=None):
         self.world = jcu.World()
         logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
 
@@ -242,6 +242,10 @@ class JointLoadWrenchAnalyzer():
         self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
 
         self.set_joint_range(joint_range_list)
+
+        if step_angle is None: step_angle = 10
+        if step_angle_list is None: step_angle_list = [step_angle]*self.joint_path.numJoints()
+        self.step_angle_list = step_angle_list
 
         self.reset_max_min_wrench()
 
@@ -355,7 +359,7 @@ class JointLoadWrenchAnalyzer():
         else:
             time.sleep(tm)
 
-    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, save_model=None, do_wait=None, division_num=None, tm=None):
+    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, save_model=None, do_wait=None, tm=None):
         if joint_idx is None:
             joint_idx = 0
             self.reset_max_min_wrench()
@@ -365,21 +369,20 @@ class JointLoadWrenchAnalyzer():
         if is_instant is None: is_instant = True
         if save_model is None: save_model = False
         if do_wait is None: do_wait = False
-        if division_num is None: division_num = 1
         if tm is None: tm = 0.2
 
         joint_name = self.joint_path.joint(joint_idx).name()
         joint_range = self.joint_range_list[joint_idx]
-        division_num_ = 1 if joint_range[0] == joint_range[1] else division_num
+        step_angle = self.step_angle_list[joint_idx]
 
         if joint_idx < self.joint_path.numJoints() and logger.isEnabledFor(INFO): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
         if joint_idx+1 == self.joint_path.numJoints() and logger.isEnabledFor(INFO): print(" changed")
         fname=fname.replace(".png","_0.png") # set dummy
-        for joint_angle in np.linspace(joint_range[0],joint_range[1],division_num_):
-            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+division_num/10)+".png",fname)
+        for division_idx,joint_angle in enumerate(np.arange(joint_range[0],joint_range[1]+1,step_angle)):
+            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+int((joint_range[1]-joint_range[0])/step_angle)/10)+".png",fname)
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints():
-                self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,division_num=division_num,tm=tm)
+                self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
             else:
                 self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
 
@@ -405,97 +408,102 @@ def test_calcuate_frame_load():
     # division_num=4; do_wait=False; tm=0;   do_plot=True
     # division_num=4; do_wait=False; tm=0;   do_plot=False
     # division_num=6; do_wait=False; tm=0; do_plot=False
-    division_num=9; do_wait=False; tm=0;   do_plot=False
+    step_angle=10; do_wait=False; tm=0;   do_plot=False
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
+    step_angle_list = [20,20,20,20,20,20]
+    # step_angle_list = [20,20,20,20,360,360]
+    # step_angle_list = [10,10,10,360,360,360]
     # joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-80,75),(0,0)] # set full range to all joint
-    joint_range_list = [(0,60),(0,120),(0,90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
+    joint_range_list = [(0,60),(0,120),(0,90), (0,0),(0,90),(0,0) ,(0,60),(0,80),(0,0)] # set actual range to all joint
+    # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(0,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
+    # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
     # joint_range_list = [(60,60),(55,55),(-90,-90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/fix
 
     # # JAXON_RED
-    # analyzer = JointLoadWrenchAnalyzer([0,0,(0,0),0,0,0], robot_item=None)
-    # analyzer.calc_whole_range_max_load_wrench('LLEG_JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    # analyzer = JointLoadWrenchAnalyzer([0,0,(0,0),0,0,0], robot_item=None, step_angle_list=step_angle_list)
+    # analyzer.calc_whole_range_max_load_wrench('LLEG_JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     # logger.critical(Fore.YELLOW+analyzer.robot.name()+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="z-x-y_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="z-x-y_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
     logger.critical("")
 
 
     joint_structure_str="z-y-x_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="z-y-x_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
     logger.critical("")
 
 
     joint_structure_str="x-y-z_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="x-y-z_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
     logger.critical("")
 
 
     joint_structure_str="y-x-z_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="y-x-z_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
     logger.critical("")
 
 
     joint_structure_str="z-x-y_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="z-y-x_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="z-x-y_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     joint_structure_str="z-y-x_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
 def export_overall_frame_load_region():
@@ -507,15 +515,15 @@ def export_overall_frame_load_region():
     # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
     # joint_range_list = [(60,60),(55,55),(-90,-90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/fix
 
-    division_num = 9
+    step_angle = 10
 
     global analyzer
     joint_configuration_str = "z-y-x_y_y-x"
     common_fname = os.path.join(package_path,"overall-frame-load-region","frame-load-region")
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle=step_angle,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=False, tm=0, save_plot=True, fname=common_fname+"_overall.png", is_instant=False, save_model=False)
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=False, tm=0, save_plot=True, fname=common_fname+"_instant.png", is_instant=True, save_model=True)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=False, tm=0, save_plot=True, fname=common_fname+"_overall.png", is_instant=False, save_model=False)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=False, tm=0, save_plot=True, fname=common_fname+"_instant.png", is_instant=True, save_model=True)
     logger.critical(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
 def export_joint_configuration_comparison():
