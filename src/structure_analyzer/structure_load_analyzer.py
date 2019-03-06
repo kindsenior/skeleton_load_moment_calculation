@@ -106,11 +106,11 @@ class PlotInterface():
         for surf in self.prev_surf_list: surf.remove()
         self.prev_surf_list = []
 
-        if isInstant or self.vertices is None: # reset vertices for instant skeleton load moment
+        if isInstant or self.vertices is None: # reset vertices for instant frame load moment
             self.vertices = vertices
         else:
             # [ self.vertices.append(vertex) for vertices in vertices ]
-            self.vertices = np.append(self.vertices, vertices, axis=0) # append vertices for total skeleton load moment
+            self.vertices = np.append(self.vertices, vertices, axis=0) # append vertices for total frame load moment
             # need to reduce vertices?
 
         self.vertices = np.round(self.vertices) # round to integer
@@ -159,7 +159,7 @@ class PlotInterface():
 
         if save_plot: plt.savefig(fname)
 
-def convert_to_skeleton_moment_vertices(A_, B_):
+def convert_to_frame_load_wrench_vertices(A_, B_):
     num_joints = A_.shape[1]
     load_dim = A_.shape[0]
     try:
@@ -319,7 +319,7 @@ class JointLoadWrenchAnalyzer():
         self.R2i = R2i
         self.A_theta = A_theta
 
-        return convert_to_skeleton_moment_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
+        return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
 
     def calc_max_frame_load_wrench(self, target_joint_name, do_plot=None, save_plot=None, fname=None, is_instant=None, save_model=None, do_wait=None, tm=None):
         joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
