@@ -218,122 +218,6 @@ def convert_to_skeleton_moment_vertices(A_, B_):
     n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
     return n_vertices
 
-def sweep_joint_range(division_num=None, dowait=None, tm=None, plot=None, save_plot=None, fname=None, isInstant=None):
-    logger.info("joint_structure:" + str(joint_structure))
-    if division_num is None:
-        division_num = 5
-
-    if dowait is None:
-        dowait = True
-
-    if tm is None:
-        tm = 0.5
-
-    if plot is None: plot = True
-
-    if save_plot is None: save_plot = False
-    if fname is None: fname = ""
-
-    if isInstant is None: isInstant = True
-    # if not isInstant: pi.reset_hull() # error (popitem(): dictionary is empty)
-
-    max_moment_vec = float("-inf")*np.ones(moment_dim)
-    min_moment_vec = float("inf")*np.ones(moment_dim)
-    return sweep_joint_range_impl(joint_order, rot_list,  max_moment_vec, min_moment_vec, division_num=division_num, dowait=dowait, tm=tm, plot=plot, save_plot=save_plot, fname=fname, isInstant=isInstant)
-
-
-def sweep_joint_range_impl(child_joint_indices, rot_list, max_moment_vec, min_moment_vec, division_num, dowait, tm, plot, save_plot, fname, isInstant, escape=None):
-    logger.debug("sweep_joint_range_impl()")
-    logger.info("child_joint_indices="+str(child_joint_indices))
-    logger.debug("")
-
-    if escape is None: escape = False
-
-    if escape:
-        return max_moment_vec, min_moment_vec, escape
-    else:
-        turn = A_theta.shape[0] - len(child_joint_indices)
-        if len(child_joint_indices) > 1:
-            child_joint_idx = child_joint_indices[1] # x/y/z = 0/1/2
-            child_joint_range = joint_range_list[child_joint_idx]
-            child_joint_axis = np.identity(3)[:,child_joint_idx]
-            logger.info("child_joint_range="+str(child_joint_range))
-            for idx, child_joint_angle in enumerate(np.linspace(child_joint_range[0], child_joint_range[1], division_num)):
-                logger.info(str(joint_name_list[child_joint_idx]) + " is " + str(child_joint_angle) + " [deg]")
-                # pi.joint_angle_texts[child_joint_idx].set_text(joint_name_list[child_joint_idx] + " = " + str(child_joint_angle) + " [deg]")
-                rot_list[turn] = linalg.expm3( np.cross(np.identity(moment_dim), child_joint_axis*np.deg2rad(child_joint_angle) ) )
-                max_moment_vec, min_moment_vec, escape = sweep_joint_range_impl(child_joint_indices[1:], rot_list, max_moment_vec ,min_moment_vec, dowait=dowait, division_num=division_num, tm=tm, escape=escape, plot=plot,
-                                                                                save_plot=save_plot, fname=fname.replace(".","-"+str(idx)+"."), isInstant=isInstant)
-
-            return max_moment_vec, min_moment_vec, escape
-        else:
-            rot_list[-1] = np.identity(3) # turn = 3-1
-            for i in range(A_theta.shape[0]):
-                group_last_axis = [ joint_group for joint_group in joint_structure for joint_axis in joint_group if joint_axis == joint_order[i] ][0][-1]
-                # A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[joint_order.tolist().index(group_last_axis):]).dot(local_axis_list[i][:,np.newaxis]).T[0]
-                A_theta[i] = reduce(lambda x,y: np.dot(x,y), rot_list[i:]).dot(local_axis_list[i][:,np.newaxis]).T[0]
-            B_theta = np.identity(moment_dim) - A_theta.dot(A_theta.T).dot(S) # E - A*A^T*S
-
-            logger.debug("rot_list=")
-            logger.debug(rot_list)
-            logger.debug("A_theta=")
-            logger.debug(A_theta)
-            logger.debug("B_theta=")
-            logger.debug(B_theta)
-            logger.debug("")
-
-            n_vertices = convert_to_skeleton_moment_vertices(A_theta,B_theta) # instance
-
-            max_moment_vec = np.vstack([n_vertices, max_moment_vec]).max(axis=0)
-            min_moment_vec = np.vstack([n_vertices, min_moment_vec]).min(axis=0)
-            max_moment_vec[np.ma.where(abs(max_moment_vec) < 10)] = 0 # set |elements|<10 to 0
-            min_moment_vec[np.ma.where(abs(min_moment_vec) < 10)] = 0
-            max_moment_vec[np.ma.where(abs(max_moment_vec) >= max_value)] = np.inf # set |elements|>max_value to inf
-            min_moment_vec[np.ma.where(abs(min_moment_vec) >= max_value)] = -np.inf
-            pi.max_moment_text.set_text("max moments = " + str(max_moment_vec) + " [Nm]")
-            logger.info(" max: " + str(max_moment_vec))
-            logger.info(" min: " + str(min_moment_vec))
-            if plot: pi.plot_convex_hull(n_vertices, save_plot=save_plot, fname=fname, isInstant=isInstant)
-
-            if dowait:
-                logger.critical(Fore.BLUE+"RET to continue, q to escape"+Style.RESET_ALL)
-                key = raw_input()
-                if key == 'q': escape = True
-            else:
-                time.sleep(tm)
-
-            return max_moment_vec, min_moment_vec, escape
-
-def init_vals():
-    global joint_order
-    global num_joints
-    global moment_dim
-    global rot_list
-    global local_axis_list
-    global A_theta
-    global S
-    global max_tau
-
-    joint_order = np.array([idx for l in joint_structure for idx in l])
-    num_joints = len(joint_order)
-    moment_dim = num_joints
-    rot_list = np.array([np.identity(3) for x in range(num_joints)])
-    # local_axis_list = [None for x in range(num_joints)]
-    local_axis_list = np.identity(moment_dim)[joint_order] # each row is axis
-
-    A_theta = np.zeros([num_joints,moment_dim])
-    S = 0.99 * np.diag([1 if x in joint_structure[-1] else 0 for x in joint_order])
-
-    assert len(joint_range_list) == num_joints
-
-    max_tau = np.array([max_tau_list[joint_idx] for joint_idx in joint_order])[:,np.newaxis] # from root order
-    assert len(max_tau) == num_joints
-
-def set_joint_structure(_joint_structure):
-    global joint_structure
-    joint_structure = _joint_structure
-    init_vals()
-
 def skew(vec):
     return np.array([[0,-vec[2],vec[1]],
                      [vec[2],0,-vec[0]],
@@ -500,20 +384,6 @@ class JointLoadWrenchAnalyzer():
                 self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
 
 max_value = 10000
-joint_name_list = ("hip-x", "hip-y", "hip-z")
-joint_range_list = [(-30,60),(-120,55),(-90,90)] # roll, pitch, yaw
-# joint_range_list = [(0,0),(0,0),(-90,90)] # roll, pitch, yaw
-# joint_range_list = [(-30,30),(0,0),(0,0)] # roll, pitch, yaw
-# joint_range_list = [(-90,90),(0,0),(0,0)] # roll, pitch, yaw
-# joint_range_list = [(0,0),(90,90),(0,0)] # roll, pitch, yaw
-# joint_range_list = [(0,0),(45,45),(0,0)] # roll, pitch=45, yaw
-# joint_range_list = [(45,45),(45,45),(0,0)] # roll=45, pitch=45, yaw
-# joint_range_list = np.array([(60,60),(45,45),(0,0)]) # roll, pitch, yaw
-# joint_range_list = [(-30,30),(-45,45),(0,0)] # roll, pitch, yaw
-# max_tau_list = np.array([330,700,120]) # roll, pitch, yaw
-# max_tau_list = np.array([300,700,120]) # roll, pitch, yaw
-max_tau_list = np.array([300,700,120,700,100,100]) # roll, pitch, yaw
-# max_tau_list = np.array([330,750,120]) # roll, pitch, yaw 426,750,607
 
 def initialize_plot_interface():
     global pi
@@ -530,17 +400,6 @@ def initialize_plot_interface():
     pi.ax.set_ylim3d(-max_display_num,max_display_num)
     pi.ax.set_zlim3d(-max_display_num,max_display_num)
 
-def export_snapshot():
-    global joint_range_list
-    max_display_num = 800
-    pi.ax.set_xlim3d(-max_display_num,max_display_num)
-    pi.ax.set_ylim3d(-max_display_num,max_display_num)
-    pi.ax.set_zlim3d(-max_display_num,max_display_num)
-    joint_range_list = [(-30,60),(0,80),(-90,90)]
-    set_joint_structure([[2],[1],[0],[]])
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="total-skeleton-load-moment-solid/total-skeleton-load-moment-solid.png", isInstant=False)
-    sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="instant-skeleton-load-moment-solid/instant-skeleton-load-moment-solid.png")
 
 def export_overall_frame_load_region():
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
@@ -657,38 +516,6 @@ def export_drive_system_comparison():
 
 if __name__ == '__main__':
     initialize_plot_interface()
-
-    # joint_range_list = [(0,0),(0,0),(0,0)]
-    # set_joint_structure([[2],[0],[1],[]])
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="initial-skeleton-load-moment-solid.png")
-
-    # joint_range_list = [(35,35),(100,100),(20,20)]
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
-    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zxy.png")
-
-    # set_joint_structure([[2],[1],[0],[]])
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(20.0) + " [deg]")
-    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="joint-structure-comparison-solid_zyx.png")
-
-
-    # joint_range_list = [(20,20),(70,70),(0,0)]
-    # max_display_num = 500
-    # pi.ax.set_xlim3d(-max_display_num,max_display_num)
-    # pi.ax.set_ylim3d(-max_display_num,max_display_num)
-    # pi.ax.set_zlim3d(-max_display_num,max_display_num)
-
-    # set_joint_structure([[2],[0],[1],[]])
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_rotational.png")
-
-    # set_joint_structure([[2],[0],[1]])
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_tendon.png")
-
-    # set_joint_structure([[2],[0,1]])
-    # pi.joint_angle_texts[joint_order[0]].set_text(joint_name_list[joint_order[0]] + " = "+ str(0.0) + " [deg]")
-    # sweep_joint_range(division_num = 1, dowait=False, save_plot=True, fname="deflection-correction-comparison-solid_linear.png")
 
     division_num=4; do_wait=False; tm=0;   do_plot=True
     # division_num=6, do_wait=False, tm=0.5, do_plot=False
