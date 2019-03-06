@@ -84,6 +84,8 @@ class PlotInterface():
 
         self.prev_surf_list = []
 
+        self.reset_hull()
+
     def reset_hull(self):
         self.vertices = None
 
@@ -557,7 +559,7 @@ def export_joint_configuration_comparison():
         analyzer1.robot.calcForwardKinematics()
         common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
         division_num = 20
-        for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num) for langle,uangle in zip(l_angle,u_angle)]).T):
+        for idx, angle_vector in enumerate(np.linspace(l_angle,u_angle,division_num,endpoint=True).T):
             # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
             index_str = "_"+str(idx).zfill(2)
 
