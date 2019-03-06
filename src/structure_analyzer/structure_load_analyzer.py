@@ -90,10 +90,7 @@ class PlotInterface():
     def reset_hull(self):
         self.vertices = None
 
-    def plot_convex_hull(self, vertices, save_plot=None, fname="test.png", isInstant=None):
-
-        if save_plot is None: save_plot=False
-        if isInstant is None: isInstant=True
+    def plot_convex_hull(self, vertices, save_plot=False, fname="test.png", isInstant=True):
 
         # ax.clear()
         # self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
@@ -224,13 +221,12 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer():
-    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name=None, step_angle_list=None, step_angle=None):
+    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", step_angle_list=None, step_angle=10):
         self.world = jcu.World()
         logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
 
         self.actuator_set_list = actuator_set_list_
         self.set_robot(robot_item, robot_model_file)
-        if end_link_name is None: end_link_name = "LLEG_JOINT5"
         self.set_joint_path(end_link_name=end_link_name)
 
         self.axis_product_mat = reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
@@ -243,7 +239,6 @@ class JointLoadWrenchAnalyzer():
 
         self.set_joint_range(joint_range_list)
 
-        if step_angle is None: step_angle = 10
         if step_angle_list is None: step_angle_list = [step_angle]*self.joint_path.numJoints()
         self.step_angle_list = step_angle_list
 
@@ -266,9 +261,9 @@ class JointLoadWrenchAnalyzer():
             self.robot = self.robot_item.body()
         logger.info("robot model name: "+str(self.robot.modelName()))
 
-    def set_joint_path(self, root_link_name=None,end_link_name=None):
+    def set_joint_path(self, root_link_name=None,end_link_name="LLEG_JOINT5"):
         self.root_link = self.robot.rootLink() if root_link_name is None else self.robot.link(root_link_name)
-        self.end_link = self.robot.link("LLEG_JOINT5") if end_link_name is None else self.robot.link(end_link_name)
+        self.end_link = self.robot.link(end_link_name)
         logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath(self.root_link, self.end_link)
 
@@ -325,7 +320,7 @@ class JointLoadWrenchAnalyzer():
 
         return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
 
-    def calc_max_frame_load_wrench(self, target_joint_name, do_plot=None, save_plot=None, fname=None, is_instant=None, save_model=None, do_wait=None, tm=None):
+    def calc_max_frame_load_wrench(self, target_joint_name, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
         joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
         pi.joint_angle_text.set_text(joint_angle_text)
         logger.info(joint_angle_text)
@@ -359,17 +354,9 @@ class JointLoadWrenchAnalyzer():
         else:
             time.sleep(tm)
 
-    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=None, do_plot=None, save_plot=None, fname=None, is_instant=None, save_model=None, do_wait=None, tm=None):
-        if joint_idx is None:
-            joint_idx = 0
+    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=0, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
+        if joint_idx == 0:
             self.reset_max_min_wrench()
-        if do_plot is None: do_plot = True
-        if save_plot is None: save_plot = False
-        if fname is None: fname = ""
-        if is_instant is None: is_instant = True
-        if save_model is None: save_model = False
-        if do_wait is None: do_wait = False
-        if tm is None: tm = 0.2
 
         joint_name = self.joint_path.joint(joint_idx).name()
         joint_range = self.joint_range_list[joint_idx]
