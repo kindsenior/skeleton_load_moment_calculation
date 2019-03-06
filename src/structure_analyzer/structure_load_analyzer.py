@@ -308,8 +308,9 @@ class JointLoadWrenchAnalyzer():
 
         axis_mat = A_theta[3:]
         global max_tau
-        max_tau = (self.max_tau/abs(axis_mat.T.dot(axis_mat))).min(axis=1) # tau_j = min_i(tau_i/|a_j.a_i|)
-        # max_tau = (self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat))).min(axis=1) # tau_j = min_i(tau_i/|a_j.a_i|)
+        # set tau_j to min_i(tau_i/|a_j.a_i|)
+        # max_tau = (self.max_tau/abs(axis_mat.T.dot(axis_mat))).min(axis=1) # with all joints
+        max_tau = (self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat))).min(axis=1) # with only intersecting joints
 
         self.Jre = Jre
         self.Jri = Jri
@@ -399,8 +400,8 @@ def test_calcuate_frame_load():
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
-    step_angle_list = [20,20,20,20,20,20]
-    # step_angle_list = [20,20,20,20,360,360]
+    # step_angle_list = [20,20,20,20,20,20]
+    step_angle_list = [20,20,20,20,360,360]
     # step_angle_list = [10,10,10,360,360,360]
     # joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-80,75),(0,0)] # set full range to all joint
     joint_range_list = [(0,60),(0,120),(0,90), (0,0),(0,90),(0,0) ,(0,60),(0,80),(0,0)] # set actual range to all joint
@@ -617,4 +618,4 @@ if __name__ == '__main__':
 
     export_drive_system_comparison()
 
-    export_overall_frame_load_region()
+    # export_overall_frame_load_region()
