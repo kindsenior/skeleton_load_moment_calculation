@@ -33,7 +33,8 @@ handler = StreamHandler()
 # handler.setLevel(DEBUG)
 # logger.setLevel(DEBUG)
 # logger.setLevel(INFO)
-logger.setLevel(ERROR)
+# logger.setLevel(ERROR)
+logger.setLevel(CRITICAL)
 logger.addHandler(handler)
 logger.propagate = False
 
@@ -692,7 +693,8 @@ if __name__ == '__main__':
     division_num=4; do_wait=False; tm=0;   do_plot=True
     # division_num=6, do_wait=False, tm=0.5, do_plot=False
     # division_num=9, do_wait=False, tm=0,   do_plot=False
-    model_path = os.path.join(roslib.packages.get_pkg_dir("structure_analyzer"), "models")
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
 
     joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-80,75),(0,0)] # set full range to all joint
     # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
@@ -783,7 +785,7 @@ if __name__ == '__main__':
     analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=do_wait, tm=tm, do_plot=do_plot)
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
-    # make pictures
+    # make figures
     export_joint_configuration_comparison()
 
     export_drive_system_comparison()
