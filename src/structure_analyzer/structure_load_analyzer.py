@@ -541,6 +541,26 @@ def export_snapshot():
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="total-skeleton-load-moment-solid/total-skeleton-load-moment-solid.png", isInstant=False)
     sweep_joint_range(division_num=9, dowait=False, save_plot=True, fname="instant-skeleton-load-moment-solid/instant-skeleton-load-moment-solid.png")
 
+def export_overall_frame_load_region():
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
+
+    # joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-80,75),(0,0)] # set full range to all joint
+    joint_range_list = [(0,60),(0,80),(0,0), (0,0),(0,90),(0,0) ,(0,0),(0,0),(0,0)]
+    # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
+    # joint_range_list = [(60,60),(55,55),(-90,-90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/fix
+
+    division_num = 9
+
+    global analyzer
+    joint_configuration_str = "z-y-x_y_y-x"
+    common_fname = os.path.join(package_path,"overall-frame-load-region","frame-load-region")
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=False, tm=0, save_plot=True, fname=common_fname+"_overall.png", is_instant=False, save_model=False)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', division_num=division_num, do_wait=False, tm=0, save_plot=True, fname=common_fname+"_instant.png", is_instant=True, save_model=True)
+    logger.critical(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
+
 def export_joint_configuration_comparison():
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
@@ -767,3 +787,5 @@ if __name__ == '__main__':
     export_joint_configuration_comparison()
 
     export_drive_system_comparison()
+
+    export_overall_frame_load_region()
