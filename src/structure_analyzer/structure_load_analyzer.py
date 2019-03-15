@@ -530,7 +530,7 @@ def export_joint_configuration_comparison():
                                         end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str1+".wrl"))
     target_end = analyzer0.joint_path.endLink()
 
-    common_fname=os.path.join(package_path,"joint-configuration-comparison")
+    common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
 
     analyzer0.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
     analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
@@ -545,7 +545,6 @@ def export_joint_configuration_comparison():
         u_angle = np.array([90,5,-80,90,0,0])
         analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
         analyzer1.robot.calcForwardKinematics()
-        common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
         division_num = 20
         for idx, angle_vector in enumerate(np.linspace(l_angle,u_angle,division_num,endpoint=True).T):
             # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
