@@ -27,17 +27,7 @@ import roslib
 import cnoid.Body as Body
 import cnoid.Base as Base
 
-from logging import getLogger, StreamHandler, DEBUG, INFO, WARNING, ERROR, CRITICAL
-logger = getLogger(__name__)
-handler = StreamHandler()
-# handler.setLevel(DEBUG)
-# logger.setLevel(DEBUG)
-# logger.setLevel(INFO)
-# logger.setLevel(ERROR)
-logger.setLevel(CRITICAL)
-logger.addHandler(handler)
-logger.propagate = False
-
+from logger import *
 import jsk_choreonoid.util as jcu
 import jsk_choreonoid.body_util
 
