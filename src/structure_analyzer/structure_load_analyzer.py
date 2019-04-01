@@ -546,7 +546,7 @@ def export_joint_configuration_comparison():
         analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
         analyzer1.robot.calcForwardKinematics()
         division_num = 20
-        for idx, angle_vector in enumerate(np.linspace(l_angle,u_angle,division_num,endpoint=True).T):
+        for idx, angle_vector in enumerate(np.linspace(l_angle,u_angle,division_num,endpoint=True)):
             # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
             index_str = "_"+str(idx).zfill(2)
 
