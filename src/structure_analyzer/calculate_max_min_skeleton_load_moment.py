@@ -4,11 +4,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import skeleton_load_moment_solid as sklms
+import pprint, time, sys, os, re
+from colorama import Fore, Back, Style
+import pdb
+
+import roslib
 
 from logger import *
 
-sklms.logger.setLevel(sklms.CRITICAL)
+import structure_load_analyzer as sla
+sla.logger.setLevel(sla.CRITICAL)
 
 def solve_nth_degree_equation(vec,is_complex=False):
     logger.debug("solve: " + str(vec))
@@ -230,10 +235,64 @@ class HSectionLink(Link):
 # v_thre,n_xy_max -> I_thre -> b -> S -> m
 # phi_thre,n_z_max -> I_s,omega_thre -> b -> S -> m
 
+class LinkDeflectionAnalyzer(sla.JointLoadWrenchAnalyzer):
+    def __init__(self, actuator_set_list_, link_shape_list, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", step_angle_list=None, step_angle=10):
+        super(LinkDeflectionAnalyzer, self).__init__(actuator_set_list_, joint_range_list=joint_range_list,
+                                                     robot_item=robot_item, robot_model_file=robot_model_file, end_link_name=end_link_name, step_angle_list=step_angle_list, step_angle=step_angle)
+
+        self.set_link_shape_list(link_shape_list)
+
+    def set_link_shape_list(self, link_shape_list):
+        self.link_shape_list=link_shape_list
+
+    def reset_min_mass_list(self):
+        self.min_mass_list = np.array([[0]*len(Link.MOMENT_TYPE) for i in range(self.joint_path.numJoints())])
+
+    def calc_min_section(self, target_joint_name, coord_link_name, do_plot, save_plot, fname, save_model, do_wait, tm):
+        max_wrench,min_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
+
+    def calc_min_link_mass(self, joint_idx=0, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
+        if joint_idx == 0:
+            self.reset_max_min_wrench()
+            self.reset_min_mass_list()
+
+        joint_name = self.joint_path.joint(joint_idx).name()
+        joint_range = self.joint_range_list[joint_idx]
+        step_angle = self.step_angle_list[joint_idx]
+
+        if joint_idx < self.joint_path.numJoints() and logger.isEnabledFor(INFO): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
+        if joint_idx+1 == self.joint_path.numJoints() and logger.isEnabledFor(INFO): print(" changed")
+        fname=fname.replace(".png","_0.png") # set dummy
+        for division_idx,joint_angle in enumerate(np.arange(joint_range[0],joint_range[1]+1,step_angle)):
+            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+int((joint_range[1]-joint_range[0])/step_angle)/10)+".png",fname)
+            self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
+            if joint_idx+1 < self.joint_path.numJoints():
+                # set next joint angle
+                # self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=False,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
+                self.calc_min_link_mass(joint_idx+1,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
+            else:
+                # self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=False,fname=fname,is_instant=True,save_model=save_model,do_wait=do_wait,tm=tm)
+                for idx,link_shape in enumerate(self.link_shape_list):
+                    if not link_shape is None:
+                        target_joint_name = self.joint_path.joint(idx).name()
+                        target_link_name = self.joint_path.joint(idx).name()
+                        max_proximal_wrench,min_proximal_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
+
+                        target_link_name = self.joint_path.joint(idx+1).name()
+                        max_distal_wrench,min_distal_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
+
+                        # logger.debug(max_proximal_wrench)
+                        # logger.debug(max_distal_wrench)
+
+                        self.min_mass_list[idx] = np.vstack([self.min_mass_list[idx], link_shape.calculate_min_mass(min_proximal_wrench, max_distal_wrench)]).max(axis=0)
+
+        return self.min_mass_list
+
+
 def calculate_max_skeleton_load_moment(_joint_structure):
     joint_structure = _joint_structure
-    sklms.set_joint_structure(joint_structure)
-    max_moment_vec,_,_ = sklms.sweep_joint_range(dowait=False, division_num=10 ,tm = 0, plot = False)
+    sla.set_joint_structure(joint_structure)
+    max_moment_vec,_,_ = sla.sweep_joint_range(dowait=False, division_num=10 ,tm = 0, plot = False)
     logger.info("joint_structure=" + str(joint_structure) + " : max_moment=" + str(max_moment_vec))
     return max_moment_vec
 
