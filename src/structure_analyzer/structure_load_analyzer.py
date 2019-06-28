@@ -210,7 +210,7 @@ def skew(vec):
                      [vec[2],0,-vec[0]],
                      [-vec[1],vec[0],0]])
 
-class JointLoadWrenchAnalyzer():
+class JointLoadWrenchAnalyzer(object):
     def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", step_angle_list=None, step_angle=10):
         self.world = jcu.World()
         logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
