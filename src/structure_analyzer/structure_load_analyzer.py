@@ -343,7 +343,7 @@ class JointLoadWrenchAnalyzer(object):
             key = raw_input()
             if key == 'q': escape = True
         else:
-            time.sleep(tm)
+            if do_plot: time.sleep(tm)
 
     def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=0, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
         if joint_idx == 0:
