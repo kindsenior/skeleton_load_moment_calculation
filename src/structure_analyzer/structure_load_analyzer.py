@@ -311,6 +311,9 @@ class JointLoadWrenchAnalyzer(object):
 
         return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
 
+    def calc_instant_max_frame_load_wrench(self, target_joint_name, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
+        return self.calc_max_frame_load_wrench(target_joint_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
+
     def calc_max_frame_load_wrench(self, target_joint_name, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
         joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
         pi.joint_angle_text.set_text(joint_angle_text)
@@ -319,16 +322,21 @@ class JointLoadWrenchAnalyzer(object):
         logger.debug("n_vertices=")
         logger.debug(n_vertices[:,3:])
 
-        self.max_load_wrench = np.vstack([n_vertices, self.max_load_wrench]).max(axis=0)
-        self.min_load_wrench = np.vstack([n_vertices, self.min_load_wrench]).min(axis=0)
-        self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
-        self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) < 10)] = 0
-        self.max_load_wrench[np.ma.where(abs(self.max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
-        self.min_load_wrench[np.ma.where(abs(self.min_load_wrench) >= max_value)] = -np.inf
+        max_load_wrench = n_vertices.max(axis=0)
+        min_load_wrench = n_vertices.min(axis=0)
+        max_load_wrench[np.ma.where(abs(max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
+        min_load_wrench[np.ma.where(abs(min_load_wrench) < 10)] = 0
+        max_load_wrench[np.ma.where(abs(max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
+        min_load_wrench[np.ma.where(abs(min_load_wrench) >= max_value)] = -np.inf
 
-        pi.max_moment_text.set_text("max moments = " + str(self.max_load_wrench[3:].astype(np.int)) + " [Nm]")
-        logger.info(" max: " + str(self.max_load_wrench))
-        logger.info(" min: " + str(self.min_load_wrench))
+        self.max_load_wrench = np.vstack([max_load_wrench, self.max_load_wrench]).max(axis=0)
+        self.min_load_wrench = np.vstack([min_load_wrench, self.min_load_wrench]).min(axis=0)
+
+        ret_max_load_wrench,ret_min_load_wrench = [max_load_wrench,min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
+
+        pi.max_moment_text.set_text("max moments = " + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
+        logger.info(" max: " + str(ret_max_load_wrench))
+        logger.info(" min: " + str(ret_min_load_wrench))
         if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
 
         if save_model and self.world.is_choreonoid:
@@ -344,6 +352,8 @@ class JointLoadWrenchAnalyzer(object):
             if key == 'q': escape = True
         else:
             if do_plot: time.sleep(tm)
+
+        return [ret_max_load_wrench, ret_min_load_wrench]
 
     def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=0, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
         if joint_idx == 0:
