@@ -309,7 +309,7 @@ class JointLoadWrenchAnalyzer(object):
         self.R2i = R2i
         self.A_theta = A_theta
 
-        return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) )
+        return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) ) # Ji~^T*R2, G^T-Ji~^T*Atheta*Si
 
     def calc_instant_max_frame_load_wrench(self, target_joint_name, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
         return self.calc_max_frame_load_wrench(target_joint_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
@@ -392,6 +392,8 @@ def initialize_plot_interface():
     pi.ax.set_zlim3d(-max_display_num,max_display_num)
 
 def test_calcuate_frame_load():
+    logger.critical(Fore.BLUE+"test_calcuate_frame_load()"+Style.RESET_ALL)
+
     # division_num=1; do_wait=False; tm=0;   do_plot=True
     # division_num=4; do_wait=False; tm=0;   do_plot=True
     # division_num=4; do_wait=False; tm=0;   do_plot=False
@@ -495,6 +497,8 @@ def test_calcuate_frame_load():
     logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
 def export_overall_frame_load_region():
+    logger.critical(Fore.BLUE+"export_overall_frame_load_region()"+Style.RESET_ALL)
+
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
@@ -515,6 +519,8 @@ def export_overall_frame_load_region():
     logger.critical(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
 def export_joint_configuration_comparison():
+    logger.critical(Fore.BLUE+"export_joint_configuration_comparison()"+Style.RESET_ALL)
+
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
@@ -570,6 +576,8 @@ def export_joint_configuration_comparison():
             scene_widget.saveImage(str(common_fname+"_configuration1"+"_pose"+index_str+".png"))
 
 def export_drive_system_comparison():
+    logger.critical(Fore.BLUE+"export_drive_system_comparison()"+Style.RESET_ALL)
+
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
