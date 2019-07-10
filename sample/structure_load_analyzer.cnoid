@@ -1,0 +1,384 @@
+items: 
+  id: 0
+  name: "Root"
+  plugin: Base
+  class: RootItem
+  children: 
+    - 
+      id: 1
+      name: "structure_load_analyzer.py"
+      plugin: Python
+      class: PythonScriptItem
+      data: 
+        file: "${PROJECT_DIR}/../src/structure_analyzer/structure_load_analyzer.py"
+        executionOnLoading: true
+        backgroundExecution: false
+views: 
+  - 
+    id: 0
+    plugin: Base
+    class: ItemPropertyView
+    mounted: true
+  - 
+    id: 1
+    plugin: Base
+    class: ItemTreeView
+    mounted: true
+    state: 
+      selected: [ 1 ]
+  - 
+    id: 2
+    plugin: Base
+    class: MessageView
+    mounted: true
+  - 
+    id: 3
+    plugin: Base
+    class: SceneView
+    mounted: true
+    state: 
+      editMode: false
+      viewpointControlMode: thirdPerson
+      collisionLines: false
+      polygonMode: fill
+      cullingMode: enabled
+      defaultHeadLight: true
+      defaultHeadLightIntensity: 0.75
+      headLightLightingFromBack: false
+      worldLight: true
+      worldLightIntensity: 0.5
+      worldLightAmbient: 0.3
+      additionalLights: true
+      fog: true
+      floorGrid: true
+      floorGridSpan: 10
+      floorGridInterval: 0.5
+      xzGridSpan: 10
+      xzGridInterval: 0.5
+      xzGrid: false
+      yzGridSpan: 10
+      yzGridInterval: 0.5
+      texture: true
+      lineWidth: 1
+      pointSize: 1
+      normalVisualization: false
+      normalLength: 0.01
+      coordinateAxes: true
+      fpsTestIteration: 1
+      showFPS: false
+      enableNewDisplayListDoubleRendering: false
+      useBufferForPicking: true
+      upsideDown: false
+      cameras: 
+        - 
+          camera: [ System, Perspective ]
+          isCurrent: true
+          fieldOfView: 0.698132
+          near: 0.04
+          far: 200
+          eye: [ 4.31995559, 1.4011954, 1.27461176 ]
+          direction: [ -0.949425485, -0.307950068, -0.0613025545 ]
+          up: [ -0.0583118788, -0.0189136982, 0.99811923 ]
+        - 
+          camera: [ System, Orthographic ]
+          orthoHeight: 20
+          near: 0.04
+          far: 200
+      backgroundColor: [ 0.100000001, 0.100000001, 0.300000012 ]
+      gridColor: [ 0.899999976, 0.899999976, 0.899999976, 1 ]
+      xzgridColor: [ 0.899999976, 0.899999976, 0.899999976, 1 ]
+      yzgridColor: [ 0.899999976, 0.899999976, 0.899999976, 1 ]
+      dedicatedItemTreeViewChecks: false
+  - 
+    id: 4
+    plugin: Body
+    class: BodyLinkView
+    mounted: true
+    state: 
+      showRotationMatrix: false
+  - 
+    id: 5
+    plugin: Body
+    class: JointSliderView
+    mounted: true
+    state: 
+      showAllJoints: true
+      jointId: false
+      name: true
+      numColumns: 1
+      spinBox: true
+      slider: true
+      labelOnLeft: true
+  - 
+    id: 6
+    plugin: Body
+    class: LinkSelectionView
+    mounted: true
+    state: 
+      listingMode: "Link List"
+  - 
+    id: 7
+    plugin: OpenRTM
+    class: RTSNameServerView
+    mounted: true
+    state: 
+      NameServers: 
+        - 
+          isDefaultNameServer: false
+          host: "localhost"
+          port: 2809
+  - 
+    id: 8
+    plugin: Python
+    class: PythonConsoleView
+    mounted: true
+toolbars: 
+  "TimeBar": 
+    minTime: 0
+    maxTime: 30
+    frameRate: 1000
+    playbackFrameRate: 60
+    idleLoopDrivenMode: false
+    currentTime: 0
+    speedScale: 1
+    syncToOngoingUpdates: true
+    autoExpansion: true
+  "LeggedBodyBar": 
+    stanceWidth: 0.15
+  "KinematicsBar": 
+    mode: AUTO
+    enablePositionDragger: true
+    penetrationBlock: false
+    collisionLinkHighlight: false
+    snapDistance: 0.025
+    penetrationBlockDepth: 0.0005
+    lazyCollisionDetectionMode: true
+  "BodyMotionGenerationBar": 
+    autoGenerationForNewBody: true
+    balancer: false
+    autoGeneration: false
+    timeScaleRatio: 1
+    preInitialDuration: 1
+    postFinalDuration: 1
+    onlyTimeBarRange: false
+    makeNewBodyItem: true
+    stealthyStepMode: true
+    stealthyHeightRatioThresh: 2
+    flatLiftingHeight: 0.005
+    flatLandingHeight: 0.005
+    impactReductionHeight: 0.005
+    impactReductionTime: 0.04
+    autoZmp: true
+    minZmpTransitionTime: 0.1
+    zmpCenteringTimeThresh: 0.03
+    zmpTimeMarginBeforeLiftingSpin: 0
+    zmpMaxDistanceFromCenter: 0.02
+    allLinkPositions: false
+    lipSyncMix: false
+    timeToStartBalancer: 0
+    balancerIterations: 2
+    plainBalancerMode: false
+    boundaryConditionType: position
+    boundarySmootherType: quintic
+    boundarySmootherTime: 0.5
+    boundaryCmAdjustment: false
+    boundaryCmAdjustmentTime: 1
+    waistHeightRelaxation: false
+    gravity: 9.8
+    dynamicsTimeRatio: 1
+  "RMControlBar": 
+    initialTrajectory: Generate
+    initialTrajectoryCheck: true
+    saveParameterInFileName: true
+  "SlideFrictionControlBar": 
+    saveParameterInFileName: false
+    SFC: 
+      takeoffPhaseRatioList: 1,1,1,1,1
+      takeoffPhaseRatioListCheck: true
+      landingPhaseRatioList: 1,1,1,1,1
+      landingPhaseRatioListCheck: true
+      errorCMWeight: 100
+      errorCMWeightCheck: true
+      errorMomentumWeight: 10
+      errorMomentumWeightCheck: true
+      errorAngularMomentumWeight: 1000
+      errorAngularMomentumWeightCheck: true
+      errorYawAngularMomentumWeight: 1
+      errorYawAngularMomentumWeightCheck: true
+      inputForceWeight: 0.001
+      inputForceWeightCheck: true
+      inputMomentWeight: 10
+      inputMomentWeightCheck: true
+      inputYawMomentWeight: 1
+      inputYawMomentWeightCheck: true
+      blockingList: 1,1,1,1,1,1,1,1,1,1,1,1,1
+      blockingListCheck: true
+      xDivisionNum: 2
+      xDivisionNumCheck: true
+      yDivisionNum: 2
+      yDivisionNumCheck: true
+      dt: 1
+      dtCheck: true
+  "MultiContactStabilizerBar": 
+    saveParameterInFileName: false
+    MCS: 
+      errorCMWeight: 100
+      errorCMWeightCheck: true
+      errorMomentumWeight: 10
+      errorMomentumWeightCheck: true
+      errorAngularMomentumWeight: 1000
+      errorAngularMomentumWeightCheck: true
+      inputForceWeight: 0.001
+      inputForceWeightCheck: true
+      inputMomentWeight: 10
+      inputMomentWeightCheck: true
+      blockingList: 1,1,1,1,1,1,1,1,1,1,1,1,1
+      blockingListCheck: true
+      dt: 1
+      dtCheck: true
+  "PreviewControl": 
+    controlMode: DynamicsFilter
+    controlModeCheck: true
+    saveParameterInFileName: true
+  "CascadedControlBar": 
+    saveParameterInFileName: false
+    CC: 
+      - 
+        SFC: 
+          takeoffPhaseRatioList: 1,1,1,1,1
+          takeoffPhaseRatioListCheck: true
+          landingPhaseRatioList: 1,1,1,1,1
+          landingPhaseRatioListCheck: true
+          errorCMWeight: 100
+          errorCMWeightCheck: true
+          errorMomentumWeight: 10
+          errorMomentumWeightCheck: true
+          errorAngularMomentumWeight: 1000
+          errorAngularMomentumWeightCheck: true
+          errorYawAngularMomentumWeight: 1
+          errorYawAngularMomentumWeightCheck: true
+          inputForceWeight: 0.001
+          inputForceWeightCheck: true
+          inputMomentWeight: 10
+          inputMomentWeightCheck: true
+          inputYawMomentWeight: 1
+          inputYawMomentWeightCheck: true
+          blockingList: 1,1,1,1,1,1,1,1,1,1,1,1,1
+          blockingListCheck: true
+          xDivisionNum: 2
+          xDivisionNumCheck: true
+          yDivisionNum: 2
+          yDivisionNumCheck: true
+          dt: 1
+          dtCheck: true
+      - 
+        SFC: 
+          takeoffPhaseRatioList: 1,1,1,1,1
+          takeoffPhaseRatioListCheck: true
+          landingPhaseRatioList: 1,1,1,1,1
+          landingPhaseRatioListCheck: true
+          errorCMWeight: 100
+          errorCMWeightCheck: true
+          errorMomentumWeight: 10
+          errorMomentumWeightCheck: true
+          errorAngularMomentumWeight: 1000
+          errorAngularMomentumWeightCheck: true
+          errorYawAngularMomentumWeight: 1
+          errorYawAngularMomentumWeightCheck: true
+          inputForceWeight: 0.001
+          inputForceWeightCheck: true
+          inputMomentWeight: 10
+          inputMomentWeightCheck: true
+          inputYawMomentWeight: 1
+          inputYawMomentWeightCheck: true
+          blockingList: 1,1,1,1,1,1,1,1,1,1,1,1,1
+          blockingListCheck: true
+          xDivisionNum: 2
+          xDivisionNumCheck: true
+          yDivisionNum: 2
+          yDivisionNumCheck: true
+          dt: 1
+          dtCheck: true
+Body: 
+  "BodyMotionEngine": 
+    updateJointVelocities: false
+  "EditableSceneBody": 
+    staticModelEditing: true
+  "KinematicFaultChecker": 
+    checkJointPositions: true
+    angleMargin: 0
+    translationMargin: 0
+    checkJointVelocities: true
+    velocityLimitRatio: 100
+    targetJoints: all
+    checkSelfCollisions: true
+    onlyTimeBarRange: false
+  "SplineFilterDialog": 
+    isInputFrameRateSpecified: false
+    inputFrameRate: 200
+    isOutputFrameRateSpecified: false
+    outputFrameRate: 200
+OpenRTM: 
+  "deleteUnmanagedRTCsOnStartingSimulation": false
+viewAreas: 
+  - 
+    type: embedded
+    tabs: true
+    contents: 
+      type: splitter
+      orientation: horizontal
+      sizes: [ 438, 2069 ]
+      children: 
+        - 
+          type: splitter
+          orientation: vertical
+          sizes: [ 741, 741 ]
+          children: 
+            - 
+              type: pane
+              views: [ 1 ]
+              current: 1
+            - 
+              type: pane
+              views: [ 0, 6, 7 ]
+              current: 0
+        - 
+          type: splitter
+          orientation: vertical
+          sizes: [ 1059, 423 ]
+          children: 
+            - 
+              type: splitter
+              orientation: horizontal
+              sizes: [ 914, 1151 ]
+              children: 
+                - 
+                  type: pane
+                  views: [ 4, 5 ]
+                  current: 4
+                - 
+                  type: pane
+                  views: [ 3 ]
+                  current: 3
+            - 
+              type: pane
+              views: [ 2, 8 ]
+              current: 8
+layoutOfToolBars: 
+  rows: 
+    - 
+      - { name: "FileBar", x: 0, priority: 0 }
+      - { name: "ScriptBar", x: 49, priority: 0 }
+      - { name: "TimeBar", x: 98, priority: 0 }
+      - { name: "SceneBar", x: 1056, priority: 0 }
+      - { name: "GraphBar", x: 1337, priority: 0 }
+      - { name: "SimulationBar", x: 1450, priority: 0 }
+      - { name: "BodyBar", x: 1659, priority: 0 }
+      - { name: "KinematicsBar", x: 1935, priority: 0 }
+      - { name: "BodyMotionGenerationBar", x: 2183, priority: 0 }
+      - { name: "RMControlBar", x: 2328, priority: 0 }
+      - { name: "SlideFrictionControlBar", x: 2423, priority: 0 }
+    - 
+      - { name: "MultiContactStabilizerBar", x: 0, priority: 0 }
+      - { name: "PreviewControl", x: 94, priority: 0 }
+      - { name: "CascadedControlBar", x: 263, priority: 0 }
