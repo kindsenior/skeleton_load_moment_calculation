@@ -6,7 +6,7 @@ import numpy as np
 # from matplotlib import cm
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from matplotlib.ticker import LinearLocator, FormatStrFormatter, MaxNLocator
 import itertools as it
 
 # from mpl_toolkits.mplot3d import Axes3D
@@ -57,25 +57,54 @@ def v2h(flags,vertices):
 
 class PlotInterface():
     def __init__(self):
-        self.fig = plt.figure(figsize=(12.0,12.0))
+        self.fig = plt.figure()
+        self.fig.set_size_inches((8.0,8.0))
         self.ax = self.fig.gca(projection='3d')
-        self.fig.subplots_adjust(left=0.02,right=0.98, bottom=0.02,top=0.98, wspace=0.1, hspace=1)
+        self.fig.subplots_adjust(left=-0.05,right=0.95, bottom=0.02,top=1, wspace=0.1, hspace=1)
+        self.fontsize = 35
 
-        self._text_pos = [-0.095,0.06]
-        self.joint_angle_texts = [self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*i,"", fontsize=25) for i in range(3)]
-        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]+0.007*len(self.joint_angle_texts), "", fontsize=25)
-        self._text_pos = [-0.095,0.08]
-        self.joint_angle_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*0,"", fontsize=25)
-        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-0.007*1, "", fontsize=25)
+        font_row_height = self.fontsize/2500.0
+        self._text_pos = [-0.08,0.075]
+        self.joint_angle_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-font_row_height*0,"")
+        self.joint_angle_text.set_fontsize(self.fontsize)
+        self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-font_row_height*1, "")
+        self.max_moment_text.set_fontsize(self.fontsize)
 
-        self.max_display_num = 1500
-        self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
-        self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
-        self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
+        # label
+        label_fontsize_rate = 1.1
+        self.ax.set_xlabel('',fontsize=self.fontsize*label_fontsize_rate)
+        self.ax.set_ylabel('',fontsize=self.fontsize*label_fontsize_rate)
+        self.ax.set_zlabel('',fontsize=self.fontsize*label_fontsize_rate)
+
+        # ticks
+        tics_fontsize_rate = 0.8
+        self.ax.tick_params(labelsize=self.fontsize*tics_fontsize_rate)
+
+        # margin between tics and axis label
+        labelpad_rate = 0.6
+        self.ax.axes.xaxis.labelpad=self.fontsize*labelpad_rate
+        self.ax.axes.yaxis.labelpad=self.fontsize*labelpad_rate
+        self.ax.axes.zaxis.labelpad=self.fontsize*labelpad_rate
+
+        # select tics position
+        self.ax.axes.xaxis.tick_top()
+        self.ax.axes.yaxis.tick_bottom()
+        self.ax.axes.zaxis.tick_top()
+
+        # set max tics num by Locator
+        max_n_locator = 5
+        self.ax.xaxis.set_major_locator(MaxNLocator(max_n_locator))
+        self.ax.yaxis.set_major_locator(MaxNLocator(max_n_locator))
+        self.ax.zaxis.set_major_locator(MaxNLocator(max_n_locator))
 
         self.prev_surf_list = []
 
         self.reset_hull()
+
+    def set_max_display_num(self, max_display_num):
+        self.ax.set_xlim3d(-max_display_num,max_display_num)
+        self.ax.set_ylim3d(-max_display_num,max_display_num)
+        self.ax.set_zlim3d(-max_display_num,max_display_num)
 
     def reset_hull(self):
         self.vertices = None
@@ -86,9 +115,6 @@ class PlotInterface():
         # self.ax.set_xlim3d(-self.max_display_num,self.max_display_num)
         # self.ax.set_ylim3d(-self.max_display_num,self.max_display_num)
         # self.ax.set_zlim3d(-self.max_display_num,self.max_display_num)
-        self.ax.set_xlabel("nx(roll) [Nm]")
-        self.ax.set_ylabel("ny(pitch) [Nm]")
-        self.ax.set_zlabel("nz(yaw) [Nm]")
 
         for surf in self.prev_surf_list: surf.remove()
         self.prev_surf_list = []
@@ -382,14 +408,17 @@ def initialize_plot_interface():
 
     np.set_printoptions(precision=5)
 
-    plt.rcParams["font.size"] = 25
+    # plt.rcParams["font.size"] = 25
+    plt.rcParams.update({"pgf.preamble":["\\usepackage{bm}"]})
 
-    pi.ax.view_init(30,-30) # rotate view
+    pi.ax.view_init(30,-25) # rotate view
 
-    max_display_num = 800
-    pi.ax.set_xlim3d(-max_display_num,max_display_num)
-    pi.ax.set_ylim3d(-max_display_num,max_display_num)
-    pi.ax.set_zlim3d(-max_display_num,max_display_num)
+    pi.set_max_display_num(800)
+
+    pi.ax.set_xlabel("${}^{(3)}n_x$")
+    pi.ax.set_ylabel("${}^{(3)}n_y$")
+    pi.ax.set_zlabel("  ${}^{(3)}n_z$")
+
 
 def test_calcuate_frame_load():
     logger.critical(Fore.BLUE+"test_calcuate_frame_load()"+Style.RESET_ALL)
@@ -580,6 +609,8 @@ def export_drive_system_comparison():
 
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
+
+    pi.set_max_display_num(400)
 
     joint_range_list = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
 
