@@ -292,7 +292,7 @@ class JointLoadWrenchAnalyzer(object):
         self.min_load_wrench = np.zeros(6)
 
     # calc frame load wrench vertices at current pose
-    def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None): # set joint name not joint index
+    def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None, coord_link_name=None): # set joint name not joint index
         # self.robot_item.calcForwardKinematics()
         self.robot.calcForwardKinematics()
         if self.robot_item is not None: self.robot_item.notifyKinematicStateChange()
@@ -300,6 +300,7 @@ class JointLoadWrenchAnalyzer(object):
         root_link = self.root_link if root_link_name is None else self.robot.link(root_link_name)
         end_link = self.end_link if end_link_name is None else self.robot.link(end_link_name)
         target_link = self.robot.link(target_link_name)
+        coord_link = target_link if coord_link_name is None else self.robot.link(coord_link_name)
 
         # calc selection matrix
         target_link_idx = self.joint_path.indexOf(target_link)
@@ -311,8 +312,8 @@ class JointLoadWrenchAnalyzer(object):
         Jri = Body.JointPath(root_link, target_link).calcJacobian() # root->i
         Jie = Body.JointPath(target_link, end_link).calcJacobian() # i->end
 
-        R2i = np.r_[ np.c_[target_link.R,np.zeros((3,3))],
-                     np.c_[np.zeros((3,3)), target_link.R] ]
+        R2i = np.r_[ np.c_[coord_link.R,np.zeros((3,3))],
+                     np.c_[np.zeros((3,3)), coord_link.R] ]
 
         J6ei = np.r_[ np.c_[ np.eye(3),-skew(target_link.p-end_link.p) ], # [ [E,rx] , [0,E] ]
                       np.c_[ np.zeros((3,3)),np.eye(3) ] ]
@@ -337,14 +338,14 @@ class JointLoadWrenchAnalyzer(object):
 
         return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) ) # Ji~^T*R2, G^T-Ji~^T*Atheta*Si
 
-    def calc_instant_max_frame_load_wrench(self, target_joint_name, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
-        return self.calc_max_frame_load_wrench(target_joint_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
+    def calc_instant_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
+        return self.calc_max_frame_load_wrench(target_joint_name, coord_link_name=coord_link_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
 
-    def calc_max_frame_load_wrench(self, target_joint_name, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
+    def calc_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
         joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
         pi.joint_angle_text.set_text(joint_angle_text)
         logger.info(joint_angle_text)
-        n_vertices = self.calc_current_load_wrench_vertices(target_joint_name)
+        n_vertices = self.calc_current_load_wrench_vertices(target_joint_name, coord_link_name=coord_link_name)
         logger.debug("n_vertices=")
         logger.debug(n_vertices[:,3:])
 
