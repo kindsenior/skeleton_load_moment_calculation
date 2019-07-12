@@ -349,17 +349,17 @@ class JointLoadWrenchAnalyzer(object):
         logger.debug("n_vertices=")
         logger.debug(n_vertices[:,3:])
 
-        max_load_wrench = n_vertices.max(axis=0)
-        min_load_wrench = n_vertices.min(axis=0)
-        max_load_wrench[np.ma.where(abs(max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
-        min_load_wrench[np.ma.where(abs(min_load_wrench) < 10)] = 0
-        max_load_wrench[np.ma.where(abs(max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
-        min_load_wrench[np.ma.where(abs(min_load_wrench) >= max_value)] = -np.inf
+        self.instant_max_load_wrench = n_vertices.max(axis=0)
+        self.instant_min_load_wrench = n_vertices.min(axis=0)
+        self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
+        self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) < 10)] = 0
+        self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
+        self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) >= max_value)] = -np.inf
 
-        self.max_load_wrench = np.vstack([max_load_wrench, self.max_load_wrench]).max(axis=0)
-        self.min_load_wrench = np.vstack([min_load_wrench, self.min_load_wrench]).min(axis=0)
+        self.max_load_wrench = np.vstack([self.instant_max_load_wrench, self.max_load_wrench]).max(axis=0)
+        self.min_load_wrench = np.vstack([self.instant_min_load_wrench, self.min_load_wrench]).min(axis=0)
 
-        ret_max_load_wrench,ret_min_load_wrench = [max_load_wrench,min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
+        ret_max_load_wrench,ret_min_load_wrench = [self.instant_max_load_wrench,self.instant_min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
 
         pi.max_moment_text.set_text("max moments = " + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
         logger.info(" max: " + str(ret_max_load_wrench))
