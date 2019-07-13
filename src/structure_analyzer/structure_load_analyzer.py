@@ -574,33 +574,35 @@ def export_joint_configuration_comparison():
 
     common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
 
-    analyzer0.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
-    analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
-    logger.critical(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
-
     if analyzer0.world.is_choreonoid:
         tree_view = Base.ItemTreeView.instance()
         message_view = Base.MessageView.instance()
         scene_widget = Base.SceneView.instance().sceneWidget()
 
-        l_angle = np.array([0,-70,-40,30,0,0])
-        u_angle = np.array([90,5,-80,90,0,0])
-        analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
-        analyzer1.robot.calcForwardKinematics()
-        division_num = 20
-        for idx, angle_vector in enumerate(np.linspace(l_angle,u_angle,division_num,endpoint=True)):
-            # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
-            index_str = "_"+str(idx).zfill(2)
+    analyzer0.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
+    analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
+    logger.critical(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+    analyzer1.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
 
-            analyzer0.robot.angleVector(np.deg2rad(angle_vector))
-            # FK is called in calc_max_frame_load_wrench
-            analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration0"+"_load-region"+index_str+".png")
-            # logger.info(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+    l_angle = np.array([0,-70,0,20,0,0])
+    u_angle = np.array([90,5,-80,120,0,0])
+    analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
+    analyzer1.robot.calcForwardKinematics()
+    division_num = 20
+    for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num,endpoint=True) for langle,uangle in zip(l_angle,u_angle)]).T):
+        # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
+        index_str = "_"+str(idx).zfill(2)
 
-            logger.info("IK: " + str(analyzer1.joint_path.calcInverseKinematics(target_end.p, target_end.R)))
-            analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration1"+"_load-region"+index_str+".png")
-            # logger.info(Fore.YELLOW+joint_configuration_str1+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+        analyzer0.robot.angleVector(np.deg2rad(angle_vector))
+        # FK is called in calc_max_frame_load_wrench
+        analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration0"+"_load-region"+index_str+".png")
+        # logger.info(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
 
+        logger.info("IK: " + str(analyzer1.joint_path.calcInverseKinematics(target_end.p, target_end.R)))
+        analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration1"+"_load-region"+index_str+".png")
+        # logger.info(Fore.YELLOW+joint_configuration_str1+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+
+        if analyzer0.world.is_choreonoid:
             analyzer0.world.robotItem.notifyKinematicStateChange()
             tree_view.checkItem(analyzer0.world.robotItem, True)
             tree_view.checkItem(analyzer1.world.robotItem, False)
@@ -632,8 +634,13 @@ def export_drive_system_comparison():
     analyzer2 = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
                                         end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
 
-    l_angle = np.array([0,-70,-40,30,0,0])
-    u_angle = np.array([90,0,80,90,0,0])
+    if analyzer0.world.is_choreonoid:
+        tree_view = Base.ItemTreeView.instance()
+        message_view = Base.MessageView.instance()
+        scene_widget = Base.SceneView.instance().sceneWidget()
+
+    l_angle = np.array([30,-70,-40,50,0,0])
+    u_angle = np.array([120,0,80,-90,0,0])
     common_fname=os.path.join(package_path,"drive-system-comparison","drive-system-comparison")
     division_num = 20
     for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num) for langle,uangle in zip(l_angle,u_angle)]).T):
@@ -651,6 +658,26 @@ def export_drive_system_comparison():
         analyzer2.robot.angleVector(np.deg2rad(angle_vector))
         analyzer2.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system2"+"_load-region"+index_str+".png")
         # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+
+        if analyzer0.world.is_choreonoid:
+            analyzer0.world.robotItem.notifyKinematicStateChange()
+            tree_view.checkItem(analyzer0.world.robotItem, True)
+            tree_view.checkItem(analyzer1.world.robotItem, False)
+            tree_view.checkItem(analyzer2.world.robotItem, False)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_system0"+"_pose"+index_str+".png"))
+
+            tree_view.checkItem(analyzer0.world.robotItem, False)
+            tree_view.checkItem(analyzer1.world.robotItem, True)
+            tree_view.checkItem(analyzer2.world.robotItem, False)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_system1"+"_pose"+index_str+".png"))
+
+            tree_view.checkItem(analyzer0.world.robotItem, False)
+            tree_view.checkItem(analyzer1.world.robotItem, False)
+            tree_view.checkItem(analyzer2.world.robotItem, True)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_system2"+"_pose"+index_str+".png"))
 
 if __name__ == '__main__':
     initialize_plot_interface()
