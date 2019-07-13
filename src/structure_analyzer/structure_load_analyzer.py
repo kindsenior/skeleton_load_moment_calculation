@@ -402,7 +402,7 @@ class JointLoadWrenchAnalyzer(object):
 
         if save_model and self.world.is_choreonoid:
             self.world.robotItem.notifyKinematicStateChange()
-            self.tree_view.checkItem(analyzer.world.robotItem, True)
+            self.tree_view.checkItem(self.world.robotItem, True)
             self.message_view.flush()
             head_fname = re.sub('[_0-9]*$',"",fname.replace(".png",""))
             self.scene_widget.saveImage(str(fname.replace(head_fname,head_fname+"_pose")))
