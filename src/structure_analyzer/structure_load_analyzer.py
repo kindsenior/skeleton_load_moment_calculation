@@ -376,7 +376,7 @@ class JointLoadWrenchAnalyzer(object):
         return self.calc_max_frame_load_wrench(target_joint_name, coord_link_name=coord_link_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
 
     def calc_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
-        joint_angle_text = "joint angles: " + str([np.round(np.rad2deg(self.robot.link(self.joint_path.joint(idx).name()).q),1) for idx in range(self.joint_path.numJoints())]) + " [deg]" # round joint angles
+        joint_angle_text = r'$\theta$: ' + str(np.rad2deg(self.robot.angleVector()).astype(np.int)) + ' [deg]' # round joint angles
         pi.joint_angle_text.set_text(joint_angle_text)
         logger.info(joint_angle_text)
         n_vertices = self.calc_current_load_wrench_vertices(target_joint_name, coord_link_name=coord_link_name)
@@ -395,7 +395,7 @@ class JointLoadWrenchAnalyzer(object):
 
         ret_max_load_wrench,ret_min_load_wrench = [self.instant_max_load_wrench,self.instant_min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
 
-        pi.max_moment_text.set_text("max moments = " + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
+        pi.max_moment_text.set_text('${}^{(3)}n_{\mathrm{frm}}$: ' + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
         logger.info(" max: " + str(ret_max_load_wrench))
         logger.info(" min: " + str(ret_min_load_wrench))
         if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
