@@ -26,6 +26,7 @@ import roslib
 
 import cnoid.Body as Body
 import cnoid.Base as Base
+import cnoid.BodyUtil as BodyUtil # tmp
 
 from logger import *
 import jsk_choreonoid.util as jcu
@@ -237,13 +238,15 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer(object):
-    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", step_angle_list=None, step_angle=10):
+    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, moment_colors=None, end_link_name="LLEG_JOINT5", step_angle_list=None, step_angle=10):
         self.world = jcu.World()
         logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
 
         self.actuator_set_list = actuator_set_list_
         self.set_robot(robot_item, robot_model_file)
         self.set_joint_path(end_link_name=end_link_name)
+        self.draw_interfaces = None
+        self.set_moment_colors(moment_colors=moment_colors)
 
         self.axis_product_mat = reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
 
@@ -264,6 +267,7 @@ class JointLoadWrenchAnalyzer(object):
             self.tree_view = Base.ItemTreeView.instance()
             self.message_view = Base.MessageView.instance()
             self.scene_widget = Base.SceneView.instance().sceneWidget()
+            self.set_draw_interfaces()
 
     def set_robot(self, robot_item=None, robot_model_file=None):
         self.robot_item = robot_item
@@ -287,9 +291,39 @@ class JointLoadWrenchAnalyzer(object):
         if joint_range_list is None: joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-120,120),(0,0)] # set full range to all joint
         self.joint_range_list = np.array([ joint_range_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
 
+    def set_moment_colors(self, moment_colors=None):
+        self.moment_colors = [[1,0,0],[0,1,0],[0,0.5,1]] if moment_colors is None else moment_colors
+        if not self.draw_interfaces is None:
+            [interface.setColor(color)  for interface,color in zip(self.draw_interfaces,self.moment_colors)]
+
     def reset_max_min_wrench(self):
         self.max_load_wrench = np.zeros(6)
         self.min_load_wrench = np.zeros(6)
+
+    def set_draw_interfaces(self):
+        self.draw_interfaces = [BodyUtil.DrawInterface(moment_color) for moment_color in self.moment_colors]
+
+    def draw_moment(self):
+        E = np.eye(3)
+        R = self.robot.link(self.joint_path.joint(2).name()).R
+        for idx,di in enumerate(self.draw_interfaces):
+            link = self.robot.link(self.joint_path.joint(idx).name())
+            # axis = link.R.dot(link.jointAxis())
+            axis = link.R.dot(link.a)
+            moment = R.dot(self.instant_max_load_wrench[3:])
+            tau = axis.dot(moment)
+            A = E - link.a
+            radius = (A[np.where(np.where(A>0,True,False).sum(axis=0))[0]][:]+link.a).sum(axis=0)
+            radius = link.R.dot(radius) # send in world frame
+            radius = 0.0004*radius*tau
+            axis = 0.5*axis
+            pos = link.p + np.array([0,0,0.1]) if idx is 0 else link.p # tmp
+            di.drawLineArcArrow(pos, radius, axis ,360, 0.1,60)
+            di.show()
+
+    def hide_moment(self):
+        for di in self.draw_interfaces:
+            di.hide()
 
     # calc frame load wrench vertices at current pose
     def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None, coord_link_name=None): # set joint name not joint index
@@ -616,10 +650,15 @@ def export_joint_configuration_comparison():
             analyzer0.world.robotItem.notifyKinematicStateChange()
             tree_view.checkItem(analyzer0.world.robotItem, True)
             tree_view.checkItem(analyzer1.world.robotItem, False)
+            analyzer0.draw_moment()
+            analyzer1.hide_moment()
             message_view.flush()
+
             scene_widget.saveImage(str(common_fname+"_configuration0"+"_pose"+index_str+".png"))
             tree_view.checkItem(analyzer0.world.robotItem, False)
             tree_view.checkItem(analyzer1.world.robotItem, True)
+            analyzer0.hide_moment()
+            analyzer1.draw_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_configuration1"+"_pose"+index_str+".png"))
 
@@ -674,18 +713,25 @@ def export_drive_system_comparison():
             tree_view.checkItem(analyzer0.world.robotItem, True)
             tree_view.checkItem(analyzer1.world.robotItem, False)
             tree_view.checkItem(analyzer2.world.robotItem, False)
+            analyzer0.draw_moment()
+            analyzer1.hide_moment()
+            analyzer2.hide_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_system0"+"_pose"+index_str+".png"))
 
             tree_view.checkItem(analyzer0.world.robotItem, False)
             tree_view.checkItem(analyzer1.world.robotItem, True)
             tree_view.checkItem(analyzer2.world.robotItem, False)
+            analyzer0.hide_moment()
+            analyzer1.draw_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_system1"+"_pose"+index_str+".png"))
 
             tree_view.checkItem(analyzer0.world.robotItem, False)
             tree_view.checkItem(analyzer1.world.robotItem, False)
             tree_view.checkItem(analyzer2.world.robotItem, True)
+            analyzer1.hide_moment()
+            analyzer2.draw_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_system2"+"_pose"+index_str+".png"))
 
