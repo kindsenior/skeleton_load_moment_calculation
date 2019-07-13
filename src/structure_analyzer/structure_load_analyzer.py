@@ -633,7 +633,8 @@ def export_joint_configuration_comparison():
     analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
     analyzer1.robot.calcForwardKinematics()
     division_num = 20
-    for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num,endpoint=True) for langle,uangle in zip(l_angle,u_angle)]).T):
+    angle_vectors = np.vstack([np.linspace(l_angle,u_angle,division_num,endpoint=True), np.linspace(u_angle,l_angle,division_num,endpoint=True)])
+    for idx, angle_vector in enumerate(angle_vectors):
         # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
         index_str = "_"+str(idx).zfill(2)
 
@@ -692,7 +693,8 @@ def export_drive_system_comparison():
     u_angle = np.array([120,0,80,-90,0,0])
     common_fname=os.path.join(package_path,"drive-system-comparison","drive-system-comparison")
     division_num = 20
-    for idx, angle_vector in enumerate(np.array([np.linspace(langle,uangle,division_num) for langle,uangle in zip(l_angle,u_angle)]).T):
+    angle_vectors = np.vstack([np.linspace(l_angle,u_angle,division_num,endpoint=True), np.linspace(u_angle,l_angle,division_num,endpoint=True)])
+    for idx, angle_vector in enumerate(angle_vectors):
         # index_str = "_"+'_'.join(angle_vector.astype(np.int).astype(np.str))
         index_str = "_"+str(idx).zfill(2)
 
