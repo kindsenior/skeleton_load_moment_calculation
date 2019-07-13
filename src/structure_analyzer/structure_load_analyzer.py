@@ -583,6 +583,16 @@ def export_joint_configuration_comparison():
     analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
     logger.critical(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
     analyzer1.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
+    if analyzer0.world.is_choreonoid:
+            analyzer0.world.robotItem.notifyKinematicStateChange()
+            tree_view.checkItem(analyzer0.world.robotItem, True)
+            tree_view.checkItem(analyzer1.world.robotItem, False)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_configuration0"+"_initial-pose.png"))
+            tree_view.checkItem(analyzer0.world.robotItem, False)
+            tree_view.checkItem(analyzer1.world.robotItem, True)
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_configuration1"+"_initial-pose.png"))
 
     l_angle = np.array([0,-70,0,20,0,0])
     u_angle = np.array([90,5,-80,120,0,0])
