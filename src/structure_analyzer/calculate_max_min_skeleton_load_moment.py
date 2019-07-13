@@ -322,100 +322,206 @@ class LinkDeflectionAnalyzer(sla.JointLoadWrenchAnalyzer):
                         target_joint_name = self.joint_path.joint(link_idx+1).name()
                         max_distal_wrench,min_distal_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
 
+                        # print link_idx
+                        # print min_proximal_wrench
+                        # print max_distal_wrench
+                        # print self.min_mass_list[link_shape_idx]
+                        # print link_shape.link_type()
                         self.min_mass_list[link_shape_idx][link_idx] = np.vstack([self.min_mass_list[link_shape_idx][link_idx], link_shape.calculate_min_mass(min_proximal_wrench, max_distal_wrench)]).max(axis=0)
 
         if joint_idx == 0:
+            # logger.critical(Fore.YELLOW+" min mass:"+str(self.min_mass_list.tolist())+Style.RESET_ALL)
             for link_shape,mass_list in zip(self.link_shape_list, self.min_mass_list):
                 logger.critical(Fore.YELLOW+link_shape.link_type()+"'s min mass:")
                 logger.critical(str(mass_list.tolist()))
                 logger.critical(str(mass_list.max(axis=1))+Style.RESET_ALL)
         return self.min_mass_list
 
+def test_link_mass_graph_generation():
+    logger.setLevel(CRITICAL)
+    # moment_array,_ = np.mgrid[10:1000:10,0:3] # 10->1000
+    moment_array,_ = np.mgrid[140:1000:10,0:3] # 10->1000
+    # moment_array,_ = np.mgrid[120:1000:10,0:3] # 10->1000
+    # moment_array,_ = np.mgrid[400:800:10,0:3]
 
-def calculate_max_skeleton_load_moment(_joint_structure):
-    joint_structure = _joint_structure
-    sla.set_joint_structure(joint_structure)
-    max_moment_vec,_,_ = sla.sweep_joint_range(dowait=False, division_num=10 ,tm = 0, plot = False)
-    logger.info("joint_structure=" + str(joint_structure) + " : max_moment=" + str(max_moment_vec))
-    return max_moment_vec
+    sqlink = SquarePipeLink()
+    hslink = HSectionLink()
 
-def calculate_link_mass(_joint_structure):
-    max_moment_vec = calculate_max_skeleton_load_moment(_joint_structure)
-    sqlink.calculate_min_mass(max_moment_vec)
-    hslink.calculate_min_mass(max_moment_vec)
-    logger.info("")
+    sqlink.t = 0.002*np.ones(2)
+    hslink.t = 0.002*np.ones(2)
+    sqlink_mass_array = np.array([sqlink.calculate_min_mass(moment_vec) for moment_vec in moment_array])
+    hslink_mass_array = np.array([hslink.calculate_min_mass(moment_vec) for moment_vec in moment_array])
 
-sqlink = SquarePipeLink()
-hslink = HSectionLink()
+    fig, (bending_plt, torsional_plt) = plt.subplots(ncols=2, figsize=(15,4))
+    fig.subplots_adjust(left=0.05,right=0.98, bottom=0.15,top=0.9, wspace=0.1, hspace=1)
 
-# roll=x=0, pitch=y=1, yaw=z=2
-# # x-y-z
-calculate_link_mass([[0],[1],[2],[]]) # 4733,2756,120 ok
-calculate_link_mass([[0],[1],[2]])    # 4732,2756,0 ok
-# calculate_link_mass([[0],[1,2]])      # inf,0,0 ok-
-calculate_link_mass([[0,1],[2],[]])      # 770,771,0 ok
-calculate_link_mass([[0,1],[2]])      # 770,771,0 ok
-# x-z-y
-calculate_link_mass([[0],[2],[1],[]]) # inf,700,2377 ok
-calculate_link_mass([[0],[2],[1]])
-# calculate_link_mass([[0],[2,1]])      # error
-# calculate_link_mass([[0,2],[1]])      # 350,0,347 ok-
-# y-x-z
-calculate_link_mass([[1],[0],[2],[]]) # 787,795,120 ok
-calculate_link_mass([[1],[0],[2]]) # 787,795,120 ok
-# calculate_link_mass([[1],[0,2]])      # 0,inf,0 ok-
-calculate_link_mass([[1,0],[2],[]])      # 770,771,0 ok
-calculate_link_mass([[1,0],[2]])      # 770,771,0 ok
-# y-z-x
-calculate_link_mass([[1],[2],[0],[]]) # 330,inf,1933 ok
-calculate_link_mass([[1],[2],[0]])
-# calculate_link_mass([[1],[2,0]])      # 0,inf,0 ok-
-# calculate_link_mass([[1,2],[0]])      # 0,715,666 ok-
-# z-x-y
-calculate_link_mass([[2],[0],[1],[]]) # JAXON1,2
-calculate_link_mass([[2],[0],[1]])    # JAXON3
-# calculate_link_mass([[2],[0,1],[]])   # 330,700,4317
-calculate_link_mass([[2],[0,1]])      # 0,0,4317
-# calculate_link_mass([[2,0],[1],[]]   # 350,700,347
-# calculate_link_mass([[2,0],[1]])      # 350,0,347   x-
-# z-y-x
-calculate_link_mass([[2],[1],[0],[]]) # 330,3050,7456 ok
-calculate_link_mass([[2],[1],[0]])    # 0,3050,7456 ok
-sklms.max_tau_list = np.array([301,700,120]) # roll, pitch, yaw これがないとerror
-calculate_link_mass([[2],[1,0]])      # 0,0,4660 ok
-# calculate_link_mass([[2,1],[0]])     # 0,710,666 ok-
+    bending_plt.plot(moment_array[:,0], sqlink_mass_array[:,0], label="Square pipe link")
+    bending_plt.plot(moment_array[:,0], hslink_mass_array[:,0], label="H-section link")
+    bending_plt.set_title("Link mass calculated from bending thresholds")
+    bending_plt.set_xlabel("Skeleton load moment [Nm]")
+    bending_plt.set_ylabel("Mass [g]")
+    bending_plt.grid(True)
+    bending_plt.legend()
 
-# calculate_link_mass([[2,0,1]])        # 0,0,0
-# calculate_link_mass([[2,0,1],[]])     # 330,700,120
+    torsional_plt.plot(moment_array[:,0], sqlink_mass_array[:,1], label="Square pipe link")
+    torsional_plt.plot(moment_array[:,0], hslink_mass_array[:,1], label="H-section link")
+    torsional_plt.set_title("Link mass calculated from torsional thresholds")
+    torsional_plt.set_xlabel("Skeleton load oment [Nm]")
+    torsional_plt.grid(True)
+    torsional_plt.legend()
 
-logger.setLevel(CRITICAL)
-# moment_array,_ = np.mgrid[10:1000:10,0:3] # 10->1000
-moment_array,_ = np.mgrid[140:1000:10,0:3] # 10->1000
-# moment_array,_ = np.mgrid[120:1000:10,0:3] # 10->1000
-# moment_array,_ = np.mgrid[400:800:10,0:3]
-sqlink.t = 0.002*np.ones(2)
-hslink.t = 0.002*np.ones(2)
-sqlink_mass_array = np.array([sqlink.calculate_min_mass(moment_vec) for moment_vec in moment_array])
-hslink_mass_array = np.array([hslink.calculate_min_mass(moment_vec) for moment_vec in moment_array])
+    plt.rcParams["font.size"] = 15
+    plt.pause(0.1)
+    fig.savefig("skeleton-load-moment-link-mass-relation.png")
 
-fig, (bending_plt, torsional_plt) = plt.subplots(ncols=2, figsize=(15,4))
-fig.subplots_adjust(left=0.05,right=0.98, bottom=0.15,top=0.9, wspace=0.1, hspace=1)
+def test_min_link_mass():
+    logger.critical(Fore.BLUE+"test_min_link_mass()"+Style.RESET_ALL)
 
-bending_plt.plot(moment_array[:,0], sqlink_mass_array[:,0], label="Square pipe link")
-bending_plt.plot(moment_array[:,0], hslink_mass_array[:,0], label="H-section link")
-bending_plt.set_title("Link mass calculated from bending thresholds")
-bending_plt.set_xlabel("Skeleton load moment [Nm]")
-bending_plt.set_ylabel("Mass [g]")
-bending_plt.grid(True)
-bending_plt.legend()
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
 
-torsional_plt.plot(moment_array[:,0], sqlink_mass_array[:,1], label="Square pipe link")
-torsional_plt.plot(moment_array[:,0], hslink_mass_array[:,1], label="H-section link")
-torsional_plt.set_title("Link mass calculated from torsional thresholds")
-torsional_plt.set_xlabel("Skeleton load oment [Nm]")
-torsional_plt.grid(True)
-torsional_plt.legend()
+    # step_angle=10; do_wait=False; tm=0; do_plot=False
+    step_angle=20; do_wait=False; tm=0; do_plot=False
+    step_angle_list = [20,20,20,20,360,360]
 
-plt.rcParams["font.size"] = 15
-plt.pause(0.1)
-fig.savefig("skeleton-load-moment-link-mass-relation.png")
+    # joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-80,75),(0,0)] # set full range to all joint
+    joint_range_list = [(0,60),(0,80),(0,0), (0,0),(0,90),(0,0) ,(0,0),(0,0),(0,0)]
+    # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
+    # joint_range_list = [(60,60),(55,55),(-90,-90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/fix
+
+    link_shape_list = [SquarePipeLink(), HSectionLink()]
+    # link_shape_list = [SquarePipeLink()]
+    # link_shape_list = [None,None,SquarePipeLink(), SquarePipeLink(),None]
+
+    global analyzer
+
+    logger.critical(Fore.BLUE+"Serial rotary drive joint"+Style.RESET_ALL)
+    joint_configuration_str="x-y-z_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="x-y-z_y_x-y"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+    logger.critical("")
+
+
+    # no model
+    joint_configuration_str="x-z-y_y_y-x"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    # no model
+    joint_configuration_str="x-z-y_y_x-y"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+    logger.critical("")
+
+
+    joint_configuration_str="y-x-z_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="y-x-z_y_x-y"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+    logger.critical("")
+
+
+    # no model
+    joint_configuration_str="y-z-x_y_y-x"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    # no model
+    joint_configuration_str="y-z-x_y_x-y"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+    logger.critical("")
+
+    joint_configuration_str="z-x-y_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="z-x-y_y_x-y"
+    # logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+    logger.critical("")
+
+
+    joint_configuration_str="z-y-x_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    # joint_configuration_str="z-y-x_y_x-y"
+    # analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+    #                                    end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    # analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+    logger.critical("")
+
+
+    # Serial linear
+    logger.critical(Fore.BLUE+"Serial linear drive joint"+Style.RESET_ALL)
+    joint_configuration_str="y-x-z_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="z-x-y_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="z-x-y_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="z-y-x_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    # Parallel linear
+    logger.critical(Fore.BLUE+"Parallel linear drive joint"+Style.RESET_ALL)
+    joint_configuration_str="z-x-y_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+    joint_configuration_str="z-y-x_y_y-x"
+    logger.critical(Fore.RED+joint_configuration_str+Style.RESET_ALL)
+    analyzer = LinkDeflectionAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], link_shape_list, joint_range_list=joint_range_list, step_angle_list=step_angle_list,
+                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer.calc_min_link_mass(do_wait=do_wait, tm=tm, do_plot=do_plot)
+
+if __name__ == '__main__':
+    sla.initialize_plot_interface()
+    test_min_link_mass()
