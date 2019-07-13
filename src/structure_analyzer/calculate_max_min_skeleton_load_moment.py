@@ -35,15 +35,17 @@ def deco(func):
     return wrapper
 
 class Link(object):
-    MOMENT_TYPE = (BENDING,TORSIONAL) = range(2)
+    # MOMENT_TYPE = (BENDING_Y,TORSIONAL) = range(2)
+    MOMENT_TYPE = (BENDING_X,BENDING_Y,TORSIONAL) = range(3)
 
     def __init__(self):
         self.E = 74*(10**9)
         self.G = 29*(10**9)
+        self.l = 0.4
         self.v_thre = 0.001
         # self.phi_thre = 0.01
-        self.phi_thre = 0.009
-        self.l = 0.4
+        self.phi_thre = (self.v_thre/self.l)*2
+        self.theta_thre = self.v_thre/self.l
         self.t = 0.0025*np.ones(len(Link.MOMENT_TYPE))
         self.b = 0.12*np.ones(len(Link.MOMENT_TYPE))
 
@@ -65,52 +67,69 @@ class Link(object):
 
         self.rho = 2.7*(10**6)
 
-    def I_bending_thre(self, n_max):
-        return n_max*self.l**2/(2*self.E*self.v_thre)
+    def I_bending_thre(self, min_proximal_wrench, max_distal_wrench):
+        min_proximal_n = min_proximal_wrench[3:6]
+        max_distal_n   = max_distal_wrench[3:6]
+        Ix = max(((-1.0/3)*min_proximal_n[0] + (1.0/6)*max_distal_n[0])*(self.l**2)/(self.E*self.v_thre),
+                 ((-1.0/2)*min_proximal_n[0] + (1.0/2)*max_distal_n[0])*self.l/(self.E*self.theta_thre))
+        Iy = max(((-1.0/3)*min_proximal_n[1] + (1.0/6)*max_distal_n[1])*(self.l**2)/(self.E*self.v_thre),
+                 ((-1.0/2)*min_proximal_n[1] + (1.0/2)*max_distal_n[1])*self.l/(self.E*self.theta_thre))
+
+        return Ix,Iy
 
     def get_min_real(self, ans):
         ans = np.real_if_close(ans[np.isreal(ans)])
-        ans = ans[ans>=0].min()
-        return ans
+        try:
+            return ans[ans>=0].min()
+        except ValueError:
+            logger.error(Fore.RED+"!!!no positive real in get_min_real()!!!"+Style.RESET_ALL)
+            return 0
 
-    def calculate_min_mass(self, max_moment_vec):
-        n_max = np.max(max_moment_vec[0:2])
-        n_z_max = max_moment_vec[2]
+    def calculate_min_mass(self, min_proximal_wrench, max_distal_wrench):
+        I_bending_thre  = self.I_bending_thre(min_proximal_wrench, max_distal_wrench)
+        I_torsional_thre = self.I_torsional_thre(max_distal_wrench[5])
+
         # width_vec = np.array([np.inf if np.isinf(n_max) else self.min_width_from_bending(n_max), np.inf if np.isinf(n_z_max) else self.min_width_from_torsional(n_z_max)])
         # logger.debug("width_vec: " + str(width_vec))
         # min_mass = self.rho*self.cross_section_area(width_vec)*self.l
 
         # self.b[Link.BENDING]   = np.inf if np.isinf(n_max)   else self.min_width_from_bending(n_max)
         # self.b[Link.TORSIONAL] = np.inf if np.isinf(n_z_max) else self.min_width_from_torsional(n_z_max)
-        logger.debug("bending width: " + str(self.b[Link.BENDING]) + " torsional width: " + str(self.b[Link.TORSIONAL]))
-        self.t[Link.BENDING]   = np.inf if np.isinf(n_max)   else self.min_thickness_from_bending(n_max)
-        self.t[Link.TORSIONAL] = np.inf if np.isinf(n_z_max) else self.min_thickness_from_torsional(n_z_max)
-        logger.debug("bending thickness: " + str(self.t[Link.BENDING]) + " torsional thickness: " + str(self.t[Link.TORSIONAL]))
+        logger.debug("bending width: " + str(self.b[Link.BENDING_Y]) + " torsional width: " + str(self.b[Link.TORSIONAL]))
+        self.t[Link.BENDING_X] = np.inf if np.isinf(I_bending_thre[0]) else self.min_thickness_from_bending_x(I_bending_thre[0])
+        self.t[Link.BENDING_Y] = np.inf if np.isinf(I_bending_thre[1]) else self.min_thickness_from_bending(I_bending_thre[1])
+        self.t[Link.TORSIONAL] = np.inf if np.isinf(I_torsional_thre)  else self.min_thickness_from_torsional(I_torsional_thre)
+        logger.debug("bending thickness: " + str(self.t[Link.BENDING_Y]) + " torsional thickness: " + str(self.t[Link.TORSIONAL]))
         min_mass = self.rho*self.cross_section_area()*self.l # rho*S*l = rho*V
         logger.info("min mass of link: " + str(min_mass))
-        return min_mass
+        return min_mass # minimum mass list
+
+    def cross_section_area(self):
+        raise NotImplementedError("Must override cross_section_area()")
 
 class SquarePipeLink(Link):
     def __init__(self):
         super(SquarePipeLink, self).__init__()
 
+    def link_type(self): return "Square pipe"
+
     def I_torsional_thre(self, n_z_max):
         return n_z_max*self.l/(self.G*self.phi_thre)
 
-    def min_width_from_bending(self, n_max):
-        t = self.t[Link.BENDING]
+    def min_width_from_bending(self, I_bending_thre):
+        t = self.t[Link.BENDING_Y]
         vec = (1.0/12)*np.array([-16*t**4, 32*t**3, -24*t**2, 8*t])
-        vec[0] -= self.I_bending_thre(n_max)
+        vec[0] -= I_bending_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
         logger.debug("width: " + str(ans))
         return ans
 
-    def min_width_from_torsional(self, n_z_max):
+    def min_width_from_torsional(self, I_torsional_thre):
         t = self.t[Link.TORSIONAL]
         vec = (1.0/6)*np.array([-16*t**4, 32*t**3, -24*t**2, 8*t])
-        vec[0] -= self.I_torsional_thre(n_z_max)
+        vec[0] -= I_torsional_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
@@ -118,10 +137,14 @@ class SquarePipeLink(Link):
         return ans
 
     @deco
-    def min_thickness_from_bending(self, n_max):
-        b = self.b[Link.BENDING]
+    def min_thickness_from_bending_x(self, I_bending_thre):
+        return self.min_thickness_from_bending(I_bending_thre)
+
+    @deco
+    def min_thickness_from_bending(self, I_bending_thre):
+        b = self.b[Link.BENDING_Y]
         vec = (1.0/12)*np.array([0, 8*b**3, -24*b**2, 32*b, -16])
-        vec[0] -= self.I_bending_thre(n_max)
+        vec[0] -= I_bending_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
@@ -129,11 +152,11 @@ class SquarePipeLink(Link):
         return ans
 
     @deco
-    def min_thickness_from_torsional(self, n_z_max):
+    def min_thickness_from_torsional(self, I_torsional_thre):
         b = self.b[Link.TORSIONAL]
         # vec = (1.0/6)*np.array([0, 8*b**3, -24*b**2, 32*b, -16]) # circular section
         vec = np.array([0, b**3]) # thin-walled section
-        vec[0] -= self.I_torsional_thre(n_z_max)
+        vec[0] -= I_torsional_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
@@ -155,30 +178,33 @@ class HSectionLink(Link):
         self.tc = 0.001 # center thickness
         # self.tc = 0.0015 # center thickness
 
-    def I_torsional_thre(self, n_z_max):
-        return n_z_max*(self.l**3)/(3*self.E*self.phi_thre) # Do check
+    def link_type(self): return "HSection"
 
-    def I_torsional_thre_simple(self, n_z_max):
+    # def I_torsional_thre(self, n_z_max):
+    #     return n_z_max*(self.l**3)/(3*self.E*self.phi_thre) # Do check
+
+    # def I_torsional_thre_simple(self, n_z_max):
+    def I_torsional_thre(self, n_z_max):
         return n_z_max*self.l/(self.G*self.phi_thre)
 
-    def min_width_from_bending(self, n_max):
-        t = self.t[Link.BENDING]
+    def min_width_from_bending(self, I_bending_thre):
+        t = self.t[Link.BENDING_Y]
         t2 = self.t2
         # vec = (1.0/12)*np.array([-8*t**4, 20*t**3, -18*t**2, 7*t])
         vec = (1.0/12)*np.array([-8*t*(t2**3), 8*(t2**3)+12*t*(t2**2), -(12*(t2**2)+6*t*t2), 6*t2+t])
-        vec[0] -= self.I_bending_thre(n_max)
+        vec[0] -= I_bending_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
         logger.debug("width: " + str(ans))
         return ans
 
-    def min_width_from_torsional(self, n_z_max):
-        t = self.t[Link.BENDING]
+    def min_width_from_torsional(self, I_torsional_thre):
+        t = self.t[Link.BENDING_Y]
         t2 = self.t2
         # vec = (1.0/24)*np.array([0,0,0, t**3, -2*t**2, t])
         vec = (1.0/24)*np.array([0,0,0, t2**3, -2*t2**2, t2])
-        vec[0] -= self.I_torsional_thre(n_z_max)
+        vec[0] -= I_torsional_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
@@ -186,12 +212,13 @@ class HSectionLink(Link):
         return ans
 
     @deco
-    def min_thickness_from_bending(self, n_max):
-        b = self.b[Link.BENDING]
+    def min_thickness_from_bending_x(self, I_bending_thre):
+        b = self.b[Link.BENDING_X]
         tc = self.tc
         # vec = (1.0/12)*np.array([0, 7*b**3, -18*b**2, 20*b, -8]) # common t
-        vec = (1.0/12)*np.array([tc*(b**3), 6*(b-tc)*(b**2), -12*(b-tc)*b, 8*(b-tc)]) # use tc
-        vec[0] -= self.I_bending_thre(n_max)
+        # b(2t)^3 + tc(b-2t)^3
+        vec = (1.0/12)*np.array([tc*(b**3), -6*tc*(b**2), 12*tc*b, 8*(b-tc)]) # use tc
+        vec[0] -= I_bending_thre
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
         ans = self.get_min_real(ans)
@@ -199,23 +226,37 @@ class HSectionLink(Link):
         return ans
 
     @deco
-    def min_thickness_from_torsional(self, n_z_max):
+    def min_thickness_from_bending(self, I_bending_thre):
+        b = self.b[Link.BENDING_Y]
+        tc = self.tc
+        # vec = (1.0/12)*np.array([0, 7*b**3, -18*b**2, 20*b, -8]) # common t
+        # b^4 - (b-tc)(b-2t)^3
+        vec = (1.0/12)*np.array([tc*(b**3), 6*(b-tc)*(b**2), -12*(b-tc)*b, 8*(b-tc)]) # use tc
+        vec[0] -= I_bending_thre
+        ans = solve_nth_degree_equation(vec)
+        logger.debug("ans: " + str(ans))
+        ans = self.get_min_real(ans)
+        logger.debug("thickness: " + str(ans))
+        return ans
+
+    @deco
+    def min_thickness_from_torsional(self, I_torsional_thre):
         b = self.b[Link.TORSIONAL]
         tc = self.tc
 
         # # only warping torsion
         # vec = (1.0/24)*np.array([0, b**5, -2*(b**4), b**3])
-        # vec[0] -= self.I_torsional_thre(n_z_max)
+        # vec[0] -= I_torsional_thre
 
         # # only pure torsion (open cross-section)
         # vec = np.array([0, 0, 0, b]) # approximate
         # vec = np.array([0, 0, 0, b, -2.0/3])
-        # vec[0] -= self.I_torsional_thre_simple(n_z_max)
+        # vec[0] -= I_torsional_thre
 
         # only pure torsion (closed cross-section)
         # vec = (1.0/12)*np.array([0, 9*(b**3), -18*(b**2), 21*b, -10]) # common t
         vec = (1.0/12)*np.array([tc*(b**3)+(tc**3)*b, 2*(b-tc)*(4*(b**2)+b*tc+tc**2), -12*(b-tc)*b, 8*(b-tc)]) # use tc
-        vec[0] -= self.I_torsional_thre_simple(n_z_max)
+        vec[0] -= I_torsional_thre
 
         ans = solve_nth_degree_equation(vec)
         logger.debug("ans: " + str(ans))
@@ -228,9 +269,9 @@ class HSectionLink(Link):
     #     return width**2 - (width-self.t)*(width-2*self.t2)
 
     def cross_section_area(self):
-        return self.b**2 - (self.b-self.t)*(self.b-2*self.t) # common t
+        # return self.b**2 - (self.b-self.t)*(self.b-2*self.t) # common t
         # return self.b**2 - (self.b-self.t)*(self.b-2*self.t2)
-        # return self.b**2 - (self.b-self.tc)*(self.b-2*self.t) # use tc
+        return self.b**2 - (self.b-self.tc)*(self.b-2*self.t) # use tc
 
 # v_thre,n_xy_max -> I_thre -> b -> S -> m
 # phi_thre,n_z_max -> I_s,omega_thre -> b -> S -> m
@@ -246,7 +287,8 @@ class LinkDeflectionAnalyzer(sla.JointLoadWrenchAnalyzer):
         self.link_shape_list=link_shape_list
 
     def reset_min_mass_list(self):
-        self.min_mass_list = np.array([[0]*len(Link.MOMENT_TYPE) for i in range(self.joint_path.numJoints())])
+        # self.min_mass_list = np.array([[0]*len(Link.MOMENT_TYPE) for i in range(self.joint_path.numJoints())])
+        self.min_mass_list = np.array([ [[0]*len(Link.MOMENT_TYPE) for j in range(self.joint_path.numJoints())] for i in range(len(self.link_shape_list)) ])
 
     def calc_min_section(self, target_joint_name, coord_link_name, do_plot, save_plot, fname, save_model, do_wait, tm):
         max_wrench,min_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
@@ -268,24 +310,25 @@ class LinkDeflectionAnalyzer(sla.JointLoadWrenchAnalyzer):
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints():
                 # set next joint angle
-                # self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=False,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
                 self.calc_min_link_mass(joint_idx+1,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
             else:
-                # self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=False,fname=fname,is_instant=True,save_model=save_model,do_wait=do_wait,tm=tm)
-                for idx,link_shape in enumerate(self.link_shape_list):
-                    if not link_shape is None:
-                        target_joint_name = self.joint_path.joint(idx).name()
-                        target_link_name = self.joint_path.joint(idx).name()
+                for link_shape_idx,link_shape in enumerate(self.link_shape_list):
+                    for link_idx in [2,3]:
+                        target_link_name = self.joint_path.joint(link_idx).name()
+
+                        target_joint_name = self.joint_path.joint(link_idx).name()
                         max_proximal_wrench,min_proximal_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
 
-                        target_link_name = self.joint_path.joint(idx+1).name()
+                        target_joint_name = self.joint_path.joint(link_idx+1).name()
                         max_distal_wrench,min_distal_wrench = self.calc_instant_max_frame_load_wrench(target_joint_name,coord_link_name=target_link_name,do_plot=do_plot,save_plot=False,fname=fname,save_model=save_model,do_wait=do_wait,tm=tm)
 
-                        # logger.debug(max_proximal_wrench)
-                        # logger.debug(max_distal_wrench)
+                        self.min_mass_list[link_shape_idx][link_idx] = np.vstack([self.min_mass_list[link_shape_idx][link_idx], link_shape.calculate_min_mass(min_proximal_wrench, max_distal_wrench)]).max(axis=0)
 
-                        self.min_mass_list[idx] = np.vstack([self.min_mass_list[idx], link_shape.calculate_min_mass(min_proximal_wrench, max_distal_wrench)]).max(axis=0)
-
+        if joint_idx == 0:
+            for link_shape,mass_list in zip(self.link_shape_list, self.min_mass_list):
+                logger.critical(Fore.YELLOW+link_shape.link_type()+"'s min mass:")
+                logger.critical(str(mass_list.tolist()))
+                logger.critical(str(mass_list.max(axis=1))+Style.RESET_ALL)
         return self.min_mass_list
 
 
