@@ -251,22 +251,22 @@ class JointLoadWrenchAnalyzer(object):
         self.axis_product_mat = reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
 
         self.joint_index_offsets = [0,0,0,3,6,6]
-        # set max_tau in order from root using jointAxis()
+        # set max_tau in order from root using jointAxis
         max_tau_list = np.array([300,700,120, 0,700,0, 100,200,0]) # (hip-x,hip-y,hip-z,  nil,knee-y,nil, ankle-r,ankle-p)
         # max_tau_list = np.array([300,700,120, 0,700,0, 300,700,0]) # easy
-        self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
+        self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
 
         self.set_joint_range(joint_range_list)
 
-        if step_angle_list is None: step_angle_list = [step_angle]*self.joint_path.numJoints()
+        if step_angle_list is None: step_angle_list = [step_angle]*self.joint_path.numJoints
         self.step_angle_list = step_angle_list
 
         self.reset_max_min_wrench()
 
         if self.world.is_choreonoid:
-            self.tree_view = Base.ItemTreeView.instance()
-            self.message_view = Base.MessageView.instance()
-            self.scene_widget = Base.SceneView.instance().sceneWidget()
+            self.tree_view = Base.ItemTreeView.instance
+            self.message_view = Base.MessageView.instance
+            self.scene_widget = Base.SceneView.instance.sceneWidget
             self.set_draw_interfaces()
 
     def set_robot(self, robot_item=None, robot_model_file=None):
@@ -274,22 +274,22 @@ class JointLoadWrenchAnalyzer(object):
         self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
         if self.robot_item is None:
             if self.world.is_choreonoid: # in choreonoid
-                self.robot = self.world.set_robotItem(self.robot_model_file).body()
+                self.robot = self.world.set_robotItem(self.robot_model_file).body
             else: # others
                 self.robot = jcu.get_robot(self.robot_model_file)
         else:
-            self.robot = self.robot_item.body()
-        logger.info("robot model name: "+str(self.robot.modelName()))
+            self.robot = self.robot_item.body
+        logger.info("robot model name: "+str(self.robot.modelName))
 
     def set_joint_path(self, root_link_name=None,end_link_name="LLEG_JOINT5"):
-        self.root_link = self.robot.rootLink() if root_link_name is None else self.robot.link(root_link_name)
+        self.root_link = self.robot.rootLink if root_link_name is None else self.robot.link(root_link_name)
         self.end_link = self.robot.link(end_link_name)
         logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath(self.root_link, self.end_link)
 
     def set_joint_range(self, joint_range_list=None):
         if joint_range_list is None: joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-120,120),(0,0)] # set full range to all joint
-        self.joint_range_list = np.array([ joint_range_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis()).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
+        self.joint_range_list = np.array([ joint_range_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
 
     def set_moment_colors(self, moment_colors=None):
         self.moment_colors = [[1,0,0],[0,1,0],[0,0.5,1]] if moment_colors is None else moment_colors
@@ -305,10 +305,10 @@ class JointLoadWrenchAnalyzer(object):
 
     def draw_moment(self):
         E = np.eye(3)
-        R = self.robot.link(self.joint_path.joint(2).name()).R
+        R = self.robot.link(self.joint_path.joint(2).name).R
         for idx,di in enumerate(self.draw_interfaces):
-            link = self.robot.link(self.joint_path.joint(idx).name())
-            # axis = link.R.dot(link.jointAxis())
+            link = self.robot.link(self.joint_path.joint(idx).name)
+            # axis = link.R.dot(link.jointAxis)
             axis = link.R.dot(link.a)
             moment = R.dot(self.instant_max_load_wrench[3:])
             tau = axis.dot(moment)
@@ -339,7 +339,7 @@ class JointLoadWrenchAnalyzer(object):
         # calc selection matrix
         target_link_idx = self.joint_path.indexOf(target_link)
         num_adjacent_actuator_set = self.actuator_set_list[target_link_idx]
-        diag_vec = np.array([i < target_link_idx + num_adjacent_actuator_set[1] + 1 for i in range(self.joint_path.numJoints())]) * np.array([i > target_link_idx - num_adjacent_actuator_set[0] for i in range(self.joint_path.numJoints())]).astype(np.int)
+        diag_vec = np.array([i < target_link_idx + num_adjacent_actuator_set[1] + 1 for i in range(self.joint_path.numJoints)]) * np.array([i > target_link_idx - num_adjacent_actuator_set[0] for i in range(self.joint_path.numJoints)]).astype(np.int)
         self.S = 0.99 * np.diag(diag_vec)
 
         Jre = Body.JointPath(root_link, end_link).calcJacobian() # root->end
@@ -353,7 +353,7 @@ class JointLoadWrenchAnalyzer(object):
                       np.c_[ np.zeros((3,3)),np.eye(3) ] ]
 
         Ji_tilde = np.c_[ Jri, J6ei.dot(Jie) ] # [Jri J6ei*Jie]
-        G = np.eye(self.joint_path.numJoints()) # tmp E
+        G = np.eye(self.joint_path.numJoints) # tmp E
         A_theta = np.diag([0,0,0, 1,1,1]).dot(Jre)
         # A_t = np.diag([0,0,0, 1,1,1]).dot(Jre)
 
@@ -420,17 +420,17 @@ class JointLoadWrenchAnalyzer(object):
         if joint_idx == 0:
             self.reset_max_min_wrench()
 
-        joint_name = self.joint_path.joint(joint_idx).name()
+        joint_name = self.joint_path.joint(joint_idx).name
         joint_range = self.joint_range_list[joint_idx]
         step_angle = self.step_angle_list[joint_idx]
 
-        if joint_idx < self.joint_path.numJoints() and logger.isEnabledFor(INFO): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
-        if joint_idx+1 == self.joint_path.numJoints() and logger.isEnabledFor(INFO): print(" changed")
+        if joint_idx < self.joint_path.numJoints and logger.isEnabledFor(INFO): sys.stdout.write(Fore.GREEN+" "+"#"+joint_name+Style.RESET_ALL)
+        if joint_idx+1 == self.joint_path.numJoints and logger.isEnabledFor(INFO): print(" changed")
         fname=fname.replace(".png","_0.png") # set dummy
         for division_idx,joint_angle in enumerate(np.arange(joint_range[0],joint_range[1]+1,step_angle)):
             fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+int((joint_range[1]-joint_range[0])/step_angle)/10)+".png",fname)
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
-            if joint_idx+1 < self.joint_path.numJoints():
+            if joint_idx+1 < self.joint_path.numJoints:
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
             else:
                 self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
@@ -604,14 +604,14 @@ def export_joint_configuration_comparison():
     joint_configuration_str1="z-y-x_y_y-x"
     analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
                                         end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str1+".wrl"))
-    target_end = analyzer0.joint_path.endLink()
+    target_end = analyzer0.joint_path.endLink
 
     common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
 
     if analyzer0.world.is_choreonoid:
-        tree_view = Base.ItemTreeView.instance()
-        message_view = Base.MessageView.instance()
-        scene_widget = Base.SceneView.instance().sceneWidget()
+        tree_view = Base.ItemTreeView.instance
+        message_view = Base.MessageView.instance
+        scene_widget = Base.SceneView.instance.sceneWidget
 
     analyzer0.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
     analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
@@ -643,7 +643,8 @@ def export_joint_configuration_comparison():
         analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration0"+"_load-region"+index_str+".png")
         # logger.info(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
 
-        logger.info("IK: " + str(analyzer1.joint_path.calcInverseKinematics(target_end.p, target_end.R)))
+        H = np.vstack([ np.hstack([target_end.R, np.array([target_end.p]).T]), np.array([[0,0,0,1]]) ])
+        logger.info("IK: " + str(analyzer1.joint_path.calcInverseKinematics(H)))
         analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration1"+"_load-region"+index_str+".png")
         # logger.info(Fore.YELLOW+joint_configuration_str1+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
 
@@ -685,9 +686,9 @@ def export_drive_system_comparison():
                                         end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
 
     if analyzer0.world.is_choreonoid:
-        tree_view = Base.ItemTreeView.instance()
-        message_view = Base.MessageView.instance()
-        scene_widget = Base.SceneView.instance().sceneWidget()
+        tree_view = Base.ItemTreeView.instance
+        message_view = Base.MessageView.instance
+        scene_widget = Base.SceneView.instance.sceneWidget
 
     l_angle = np.array([30,-70,-40,50,0,0])
     u_angle = np.array([120,0,80,-90,0,0])
