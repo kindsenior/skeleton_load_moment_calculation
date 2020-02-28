@@ -63,13 +63,16 @@ class PlotInterface():
         self.ax = self.fig.gca(projection='3d')
         self.fig.subplots_adjust(left=-0.05,right=0.95, bottom=0.02,top=1, wspace=0.1, hspace=1)
         self.fontsize = 35
+        self.fontfamily = 'Times New Roman'
 
         font_row_height = self.fontsize/2500.0
         self._text_pos = [-0.08,0.075]
         self.joint_angle_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-font_row_height*0,"")
         self.joint_angle_text.set_fontsize(self.fontsize)
+        self.joint_angle_text.set_family(self.fontfamily)
         self.max_moment_text = self.ax.text2D(self._text_pos[0], self._text_pos[1]-font_row_height*1, "")
         self.max_moment_text.set_fontsize(self.fontsize)
+        self.max_moment_text.set_family(self.fontfamily)
 
         # label
         label_fontsize_rate = 1.1
@@ -395,7 +398,7 @@ class JointLoadWrenchAnalyzer(object):
 
         ret_max_load_wrench,ret_min_load_wrench = [self.instant_max_load_wrench,self.instant_min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
 
-        pi.max_moment_text.set_text('${}^{(3)}n_{\mathrm{frm}}$: ' + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
+        pi.max_moment_text.set_text('${}_{3}n_{\mathrm{ld}}$: ' + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
         logger.info(" max: " + str(ret_max_load_wrench))
         logger.info(" min: " + str(ret_min_load_wrench))
         if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
@@ -444,15 +447,17 @@ def initialize_plot_interface():
     np.set_printoptions(precision=5)
 
     # plt.rcParams["font.size"] = 25
+    plt.rcParams['font.family'] = 'Times New Roman'
+    plt.rcParams['mathtext.fontset'] = 'cm'
     plt.rcParams.update({"pgf.preamble":["\\usepackage{bm}"]})
 
     pi.ax.view_init(30,-25) # rotate view
 
     pi.set_max_display_num(800)
 
-    pi.ax.set_xlabel("${}^{(3)}n_x$")
-    pi.ax.set_ylabel("${}^{(3)}n_y$")
-    pi.ax.set_zlabel("  ${}^{(3)}n_z$")
+    pi.ax.set_xlabel("${}_{3}n_{x}$")
+    pi.ax.set_ylabel("${}_{3}n_{y}$")
+    pi.ax.set_zlabel("  ${}_{3}n_{z}$")
 
 
 def test_calcuate_frame_load():
