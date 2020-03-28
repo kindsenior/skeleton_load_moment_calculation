@@ -288,7 +288,7 @@ class JointLoadWrenchAnalyzer(object):
         self.root_link = self.robot.rootLink if root_link_name is None else self.robot.link(root_link_name)
         self.end_link = self.robot.link(end_link_name)
         logger.info("end link: "+str(end_link_name))
-        self.joint_path = Body.JointPath(self.root_link, self.end_link)
+        self.joint_path = Body.JointPath.getCustomPath(self.robot, self.root_link, self.end_link)
 
     def set_joint_range(self, joint_range_list=None):
         if joint_range_list is None: joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-120,120),(0,0)] # set full range to all joint
@@ -345,9 +345,9 @@ class JointLoadWrenchAnalyzer(object):
         diag_vec = np.array([i < target_link_idx + num_adjacent_actuator_set[1] + 1 for i in range(self.joint_path.numJoints)]) * np.array([i > target_link_idx - num_adjacent_actuator_set[0] for i in range(self.joint_path.numJoints)]).astype(np.int)
         self.S = 0.99 * np.diag(diag_vec)
 
-        Jre = Body.JointPath(root_link, end_link).calcJacobian() # root->end
-        Jri = Body.JointPath(root_link, target_link).calcJacobian() # root->i
-        Jie = Body.JointPath(target_link, end_link).calcJacobian() # i->end
+        Jre = np.ndarray((6,self.joint_path.numJoints)); Body.JointPath.getCustomPath(self.robot, root_link, end_link).calcJacobian(Jre) # root->end
+        Jri = np.ndarray((6,target_link_idx+1)); Body.JointPath.getCustomPath(self.robot, root_link, target_link).calcJacobian(Jri) # root->i
+        Jie = np.ndarray((6,self.joint_path.numJoints - Jri.shape[1])); Body.JointPath.getCustomPath(self.robot, target_link, end_link).calcJacobian(Jie) # i->end
 
         R2i = np.r_[ np.c_[coord_link.R,np.zeros((3,3))],
                      np.c_[np.zeros((3,3)), coord_link.R] ]
