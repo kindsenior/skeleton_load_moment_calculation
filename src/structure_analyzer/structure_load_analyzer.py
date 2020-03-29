@@ -25,9 +25,7 @@ import pdb
 
 import roslib
 
-import cnoid.Body as Body
-import cnoid.Base as Base
-import cnoid.BodyUtil as BodyUtil # tmp
+from cnoid import Body, Base, BodyUtil
 
 from logger import *
 import jsk_choreonoid.util as jcu
@@ -463,6 +461,7 @@ def initialize_plot_interface():
 
 def test_calcuate_frame_load():
     logger.critical(Fore.BLUE+"test_calcuate_frame_load()"+Style.RESET_ALL)
+    global analyzer
 
     # division_num=1; do_wait=False; tm=0;   do_plot=True
     # division_num=4; do_wait=False; tm=0;   do_plot=True
