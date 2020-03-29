@@ -20,6 +20,7 @@ import cdd
 
 import pprint, time, sys, os, re
 from colorama import Fore, Back, Style
+import functools
 import pdb
 
 import roslib
@@ -153,7 +154,7 @@ class PlotInterface():
             try:
                 triang = tri.Triangulation(x, y)
                 refiner = tri.UniformTriRefiner(triang)
-                new, new_z = refiner.refine_field(z, subdiv=2)
+                new, new_z = refiner.refine_field(z, triinterpolator=tri.LinearTriInterpolator(triang,z), subdiv=2)
 
                 # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
                 norm = plt.Normalize(vmax=1500, vmin=-1500)
@@ -251,7 +252,7 @@ class JointLoadWrenchAnalyzer(object):
         self.draw_interfaces = None
         self.set_moment_colors(moment_colors=moment_colors)
 
-        self.axis_product_mat = reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
+        self.axis_product_mat = functools.reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
 
         self.joint_index_offsets = [0,0,0,3,6,6]
         # set max_tau in order from root using jointAxis
@@ -431,7 +432,7 @@ class JointLoadWrenchAnalyzer(object):
         if joint_idx+1 == self.joint_path.numJoints and logger.isEnabledFor(INFO): print(" changed")
         fname=fname.replace(".png","_0.png") # set dummy
         for division_idx,joint_angle in enumerate(np.arange(joint_range[0],joint_range[1]+1,step_angle)):
-            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+int((joint_range[1]-joint_range[0])/step_angle)/10)+".png",fname)
+            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+round(int((joint_range[1]-joint_range[0])/step_angle)/10))+".png",fname)
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints:
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
