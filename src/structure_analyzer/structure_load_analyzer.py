@@ -430,7 +430,7 @@ class JointLoadWrenchAnalyzer(object):
         if joint_idx+1 == self.joint_path.numJoints and logger.isEnabledFor(INFO): print(" changed")
         fname=fname.replace(".png","_0.png") # set dummy
         for division_idx,joint_angle in enumerate(np.arange(joint_range[0],joint_range[1]+1,step_angle)):
-            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(1+round(int((joint_range[1]-joint_range[0])/step_angle)/10))+".png",fname)
+            fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(int(1+int((joint_range[1]-joint_range[0])/step_angle)/10))+".png",fname)
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints:
                 self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
