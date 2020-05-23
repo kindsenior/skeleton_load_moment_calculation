@@ -377,7 +377,9 @@ class JointLoadWrenchAnalyzer(object):
     def calc_instant_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
         return self.calc_max_frame_load_wrench(target_joint_name, coord_link_name=coord_link_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
 
-    def calc_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
+    def calc_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, show_model=False, do_wait=False, tm=0.2):
+        show_model |= save_model
+
         joint_angle_text = r'$\theta$: ' + str(np.rad2deg(self.robot.angleVector()).astype(np.int)) + ' [deg]' # round joint angles
         pi.joint_angle_text.set_text(joint_angle_text)
         logger.info(joint_angle_text)
@@ -402,12 +404,12 @@ class JointLoadWrenchAnalyzer(object):
         logger.info(" min: " + str(ret_min_load_wrench))
         if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
 
-        if save_model and self.world.is_choreonoid:
+        if show_model and self.world.is_choreonoid:
             self.world.robotItem.notifyKinematicStateChange()
             self.tree_view.checkItem(self.world.robotItem, True)
             self.message_view.flush()
             head_fname = re.sub('[_0-9]*$',"",fname.replace(".png",""))
-            self.scene_widget.saveImage(str(fname.replace(head_fname,head_fname+"_pose")))
+            if save_model: self.scene_widget.saveImage(str(fname.replace(head_fname,head_fname+"_pose")))
 
         if do_wait:
             logger.critical("RET to continue, q to escape"+Style.RESET_ALL)
@@ -418,7 +420,7 @@ class JointLoadWrenchAnalyzer(object):
 
         return [ret_max_load_wrench, ret_min_load_wrench]
 
-    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=0, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, do_wait=False, tm=0.2):
+    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=0, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, show_model=False, do_wait=False, tm=0.2):
         if joint_idx == 0:
             self.reset_max_min_wrench()
 
@@ -433,9 +435,13 @@ class JointLoadWrenchAnalyzer(object):
             fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(int(1+int((joint_range[1]-joint_range[0])/step_angle)/10))+".png",fname)
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints:
-                self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
+                self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,is_instant=is_instant,
+                                                          do_plot=do_plot,save_plot=save_plot,fname=fname,save_model=save_model,show_model=show_model,
+                                                          do_wait=do_wait,tm=tm)
             else:
-                self.calc_max_frame_load_wrench(target_joint_name,do_plot=do_plot,save_plot=save_plot,fname=fname,is_instant=is_instant,save_model=save_model,do_wait=do_wait,tm=tm)
+                self.calc_max_frame_load_wrench(target_joint_name,is_instant=is_instant,
+                                                    do_plot=do_plot,save_plot=save_plot,fname=fname,save_model=save_model,show_model=show_model,
+                                                    do_wait=do_wait,tm=tm)
 
 max_value = 10000
 
