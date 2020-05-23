@@ -467,7 +467,7 @@ def test_calcuate_frame_load():
     # division_num=4; do_wait=False; tm=0;   do_plot=True
     # division_num=4; do_wait=False; tm=0;   do_plot=False
     # division_num=6; do_wait=False; tm=0; do_plot=False
-    step_angle=10; do_wait=False; tm=0;   do_plot=False
+    do_wait=False; tm=0;   do_plot=False
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
