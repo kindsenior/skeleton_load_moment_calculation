@@ -276,7 +276,18 @@ class JointLoadWrenchAnalyzer(object):
         self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
         if self.robot_item is None:
             if self.world.is_choreonoid: # in choreonoid
-                self.robot = self.world.set_robotItem(self.robot_model_file).body
+
+                # not set RobotItem dupulicately
+                childItem = self.world.worldItem.childItem
+                while childItem:
+                    if childItem.filePath == robot_model_file:
+                        self.robot_item = childItem
+                        break
+                    childItem = childItem.nextItem
+                if self.robot_item is None:
+                    self.robot_item = self.world.set_robotItem(self.robot_model_file)
+
+                self.robot = self.robot_item.body
             else: # others
                 self.robot = jcu.get_robot(self.robot_model_file)
         else:
@@ -405,8 +416,8 @@ class JointLoadWrenchAnalyzer(object):
         if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
 
         if show_model and self.world.is_choreonoid:
-            self.world.robotItem.notifyKinematicStateChange()
-            self.tree_view.checkItem(self.world.robotItem, True)
+            self.robot_item.notifyKinematicStateChange()
+            self.tree_view.checkItem(self.robot_item, True)
             self.message_view.flush()
             head_fname = re.sub('[_0-9]*$',"",fname.replace(".png",""))
             if save_model: self.scene_widget.saveImage(str(fname.replace(head_fname,head_fname+"_pose")))
@@ -629,13 +640,13 @@ def export_joint_configuration_comparison():
     logger.critical(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
     analyzer1.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
     if analyzer0.world.is_choreonoid:
-            analyzer0.world.robotItem.notifyKinematicStateChange()
-            tree_view.checkItem(analyzer0.world.robotItem, True)
-            tree_view.checkItem(analyzer1.world.robotItem, False)
+            analyzer0.robot_item.notifyKinematicStateChange()
+            tree_view.checkItem(analyzer0.robot_item, True)
+            tree_view.checkItem(analyzer1.robot_item, False)
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_configuration0"+"_initial-pose.png"))
-            tree_view.checkItem(analyzer0.world.robotItem, False)
-            tree_view.checkItem(analyzer1.world.robotItem, True)
+            tree_view.checkItem(analyzer0.robot_item, False)
+            tree_view.checkItem(analyzer1.robot_item, True)
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_configuration1"+"_initial-pose.png"))
 
@@ -660,16 +671,16 @@ def export_joint_configuration_comparison():
         # logger.info(Fore.YELLOW+joint_configuration_str1+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
 
         if analyzer0.world.is_choreonoid:
-            analyzer0.world.robotItem.notifyKinematicStateChange()
-            tree_view.checkItem(analyzer0.world.robotItem, True)
-            tree_view.checkItem(analyzer1.world.robotItem, False)
+            analyzer0.robot_item.notifyKinematicStateChange()
+            tree_view.checkItem(analyzer0.robot_item, True)
+            tree_view.checkItem(analyzer1.robot_item, False)
             analyzer0.draw_moment()
             analyzer1.hide_moment()
             message_view.flush()
 
             scene_widget.saveImage(str(common_fname+"_configuration0"+"_pose"+index_str+".png"))
-            tree_view.checkItem(analyzer0.world.robotItem, False)
-            tree_view.checkItem(analyzer1.world.robotItem, True)
+            tree_view.checkItem(analyzer0.robot_item, False)
+            tree_view.checkItem(analyzer1.robot_item, True)
             analyzer0.hide_moment()
             analyzer1.draw_moment()
             message_view.flush()
@@ -723,27 +734,27 @@ def export_drive_system_comparison():
         # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
 
         if analyzer0.world.is_choreonoid:
-            analyzer0.world.robotItem.notifyKinematicStateChange()
-            tree_view.checkItem(analyzer0.world.robotItem, True)
-            tree_view.checkItem(analyzer1.world.robotItem, False)
-            tree_view.checkItem(analyzer2.world.robotItem, False)
+            analyzer0.robot_item.notifyKinematicStateChange()
+            tree_view.checkItem(analyzer0.robot_item, True)
+            tree_view.checkItem(analyzer1.robot_item, False)
+            tree_view.checkItem(analyzer2.robot_item, False)
             analyzer0.draw_moment()
             analyzer1.hide_moment()
             analyzer2.hide_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_system0"+"_pose"+index_str+".png"))
 
-            tree_view.checkItem(analyzer0.world.robotItem, False)
-            tree_view.checkItem(analyzer1.world.robotItem, True)
-            tree_view.checkItem(analyzer2.world.robotItem, False)
+            tree_view.checkItem(analyzer0.robot_item, False)
+            tree_view.checkItem(analyzer1.robot_item, True)
+            tree_view.checkItem(analyzer2.robot_item, False)
             analyzer0.hide_moment()
             analyzer1.draw_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_system1"+"_pose"+index_str+".png"))
 
-            tree_view.checkItem(analyzer0.world.robotItem, False)
-            tree_view.checkItem(analyzer1.world.robotItem, False)
-            tree_view.checkItem(analyzer2.world.robotItem, True)
+            tree_view.checkItem(analyzer0.robot_item, False)
+            tree_view.checkItem(analyzer1.robot_item, False)
+            tree_view.checkItem(analyzer2.robot_item, True)
             analyzer1.hide_moment()
             analyzer2.draw_moment()
             message_view.flush()
