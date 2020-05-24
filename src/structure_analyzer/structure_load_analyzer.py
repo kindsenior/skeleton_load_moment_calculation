@@ -259,6 +259,9 @@ class JointLoadWrenchAnalyzer(object):
     def set_draw_interfaces(self):
         self.draw_interfaces = [BodyUtil.DrawInterface(moment_color) for moment_color in self.moment_colors]
 
+    def array_str(self, array):
+        return str(np.where(array == np.inf, np.inf, array.astype(np.int)))
+
     def draw_moment(self):
         E = np.eye(3)
         R = self.robot.link(self.joint_path.joint(2).name).R
@@ -400,7 +403,7 @@ class JointLoadWrenchAnalyzer(object):
 
         ret_max_load_wrench,ret_min_load_wrench = [self.instant_max_load_wrench,self.instant_min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
 
-        pi.max_moment_text.set_text('${}_{3}n_{\mathrm{ld}}$: ' + str(ret_max_load_wrench[3:].astype(np.int)) + " [Nm]")
+        pi.max_moment_text.set_text('${}_{3}n_{\mathrm{ld}}$: ' + self.array_str(ret_max_load_wrench[3:]) + " [Nm]")
         logger.info(" max: " + str(ret_max_load_wrench))
         logger.info(" min: " + str(ret_min_load_wrench))
         if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
@@ -500,14 +503,14 @@ def test_calcuate_frame_load():
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     joint_structure_str="x-y-z_y_x-y"
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
     logger.critical("")
 
 
@@ -516,14 +519,14 @@ def test_calcuate_frame_load():
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     joint_structure_str="y-x-z_y_x-y"
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
     logger.critical("")
 
 
@@ -532,14 +535,14 @@ def test_calcuate_frame_load():
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     joint_structure_str="z-x-y_y_x-y"
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
     logger.critical("")
 
 
@@ -548,14 +551,14 @@ def test_calcuate_frame_load():
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     joint_structure_str="z-y-x_y_x-y"
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
     logger.critical("")
 
 
@@ -566,14 +569,14 @@ def test_calcuate_frame_load():
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     joint_structure_str="z-y-x_y_y-x"
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     # Parallel linear
     logger.critical(Fore.BLUE+"Parallel linear drive joint"+Style.RESET_ALL)
@@ -582,14 +585,14 @@ def test_calcuate_frame_load():
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     joint_structure_str="z-y-x_y_y-x"
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
     analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
     if analyzer.world.is_choreonoid: analyzer.tree_view.checkItem(analyzer.robot_item, False)
-    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+str(analyzer.max_load_wrench[3:].astype(np.int))+Style.RESET_ALL)
+    logger.critical(Fore.YELLOW+joint_structure_str+" max wrench: "+analyzer.array_str(analyzer.max_load_wrench[3:])+Style.RESET_ALL)
 
     if analyzer.world.is_choreonoid: analyzer.message_view.flush()
 
