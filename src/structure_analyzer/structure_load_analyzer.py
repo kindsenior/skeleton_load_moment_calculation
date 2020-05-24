@@ -181,7 +181,7 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer(object):
-    def __init__(self, actuator_set_list_, joint_range_list=None,
+    def __init__(self, actuator_set_list_, joint_range_list=None, max_tau_list=None,
                      robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", moment_colors=None,
                      step_angle_list=None, step_angle=10, saturation_vec = None):
         self.world = jcu.World()
@@ -196,10 +196,8 @@ class JointLoadWrenchAnalyzer(object):
         self.axis_product_mat = functools.reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]]) # hard-coding the number of joints
 
         self.joint_index_offsets = [0,0,0,3,6,6] # hard-coding the number of joints
-        # set max_tau in order from root using jointAxis
-        max_tau_list = np.array([300,700,120, 0,700,0, 100,200,0]) # (hip-x,hip-y,hip-z,  nil,knee-y,nil, ankle-r,ankle-p)
-        # max_tau_list = np.array([300,700,120, 0,700,0, 300,700,0]) # easy
-        self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
+
+        self.set_max_tau(max_tau_list)
 
         self.set_joint_range(joint_range_list)
 
@@ -247,6 +245,13 @@ class JointLoadWrenchAnalyzer(object):
         self.end_link = self.robot.link(end_link_name)
         logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath.getCustomPath(self.robot, self.root_link, self.end_link)
+
+    # set max_tau in order from root using jointAxis
+    # max_tau_list is in order of coordinate axes 'x,y,z'
+    def set_max_tau(self, max_tau_list=None):
+        max_tau_list = np.array([300,700,120, 0,700,0, 100,200,0]) if max_tau_list is None else max_tau_list # (hip-x,hip-y,hip-z,  nil,knee-y,nil, ankle-r,ankle-p)
+        # max_tau_list = np.array([300,700,120, 0,700,0, 300,700,0]) if max_tau_list is None else max_tau_list # easy
+        self.max_tau = np.array([ max_tau_list[offset_idx + list(self.joint_path.joint(joint_idx).jointAxis).index(1)] for joint_idx,offset_idx in enumerate(self.joint_index_offsets) ])
 
     def set_joint_range(self, joint_range_list=None):
         if joint_range_list is None: joint_range_list = [(-30,60),(-120,55),(-90,90), (0,0),(0,150),(0,0) ,(-60,60),(-120,120),(0,0)] # set full range to all joint
