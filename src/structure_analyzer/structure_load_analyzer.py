@@ -484,7 +484,7 @@ def initialize_plot_interface():
     pi.ax.set_zlabel("  ${}_{3}n_{z}$")
 
 
-def test_calcuate_frame_load():
+def test_calculate_frame_load():
     logger.critical(Fore.BLUE+"test_calcuate_frame_load()"+Style.RESET_ALL)
     global analyzer
 
@@ -753,7 +753,7 @@ if __name__ == '__main__':
     initialize_plot_interface()
 
     # test
-    test_calcuate_frame_load()
+    test_calculate_frame_load()
 
     # make figures
     export_joint_configuration_comparison()
