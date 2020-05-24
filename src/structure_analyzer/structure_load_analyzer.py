@@ -505,84 +505,71 @@ def test_calcuate_frame_load():
     # joint_range_list = [(0,60),(0,120),(0,90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/half range
     # joint_range_list = [(60,60),(55,55),(-90,-90), (0,0),(90,90),(0,0) ,(0,0),(0,0),(0,0)] # hip only/fix
 
+    constructor_args = {
+        'joint_range_list': joint_range_list,
+        'step_angle_list': step_angle_list,
+        'end_link_name': 'JOINT5',
+        }
+    calc_args = {
+        'do_wait': do_wait,
+        'tm': tm,
+        'do_plot': do_plot,
+        }
+
     # # JAXON_RED
     # analyzer = JointLoadWrenchAnalyzer([0,0,(0,0),0,0,0], robot_item=None, step_angle_list=step_angle_list)
-    # analyzer.calc_whole_range_max_load_wrench('LLEG_JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    # analyzer.calc_whole_range_max_load_wrench('LLEG_JOINT2', **calc_args)
     # logger.critical(Fore.YELLOW+analyzer.robot.name()+" max wrench: "+str(analyzer.max_load_wrench)+Style.RESET_ALL)
 
     # Serial rotary
     logger.critical(Fore.BLUE+"Serial rotary drive joint"+Style.RESET_ALL)
-    joint_structure_str="x-y-z_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_x-y-z_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
-    joint_structure_str="x-y-z_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_x-y-z_y_x-y.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
     logger.critical("")
 
 
-    joint_structure_str="y-x-z_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_y-x-z_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
-    joint_structure_str="y-x-z_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_y-x-z_y_x-y.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
     logger.critical("")
 
 
-    joint_structure_str="z-x-y_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
-    joint_structure_str="z-x-y_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_x-y.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
     logger.critical("")
 
 
-    joint_structure_str="z-y-x_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
-    joint_structure_str="z-y-x_y_x-y"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_x-y.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
     logger.critical("")
 
 
     # Serial linear
     logger.critical(Fore.BLUE+"Serial linear drive joint"+Style.RESET_ALL)
-    joint_structure_str="z-x-y_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
-    joint_structure_str="z-y-x_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
     # Parallel linear
     logger.critical(Fore.BLUE+"Parallel linear drive joint"+Style.RESET_ALL)
-    joint_structure_str="z-x-y_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
-    joint_structure_str="z-y-x_y_y-x"
-    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0)], joint_range_list=joint_range_list, step_angle_list=step_angle_list,
-                                       end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_structure_str+".wrl"))
-    analyzer.calc_whole_range_max_load_wrench('JOINT2', do_wait=do_wait, tm=tm, do_plot=do_plot)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
 def export_overall_frame_load_region():
     logger.critical(Fore.BLUE+"export_overall_frame_load_region()"+Style.RESET_ALL)
