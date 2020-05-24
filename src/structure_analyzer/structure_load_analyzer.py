@@ -431,7 +431,8 @@ class JointLoadWrenchAnalyzer(object):
 
         return [ret_max_load_wrench, ret_min_load_wrench]
 
-    def calc_whole_range_max_load_wrench(self, target_joint_name, joint_idx=0, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, show_model=False, do_wait=False, tm=0.2):
+    def calc_whole_range_max_load_wrench(self, target_joint_name, coord_link_name=None, joint_idx=0, is_instant=True,
+                                             do_plot=True, save_plot=False, save_model=False, show_model=False, fname="", do_wait=False, tm=0.2):
         if joint_idx == 0:
             self.reset_max_min_wrench()
 
@@ -446,11 +447,11 @@ class JointLoadWrenchAnalyzer(object):
             fname=re.sub('_[0-9]*\.png',"_"+str(division_idx).zfill(int(1+int((joint_range[1]-joint_range[0])/step_angle)/10))+".png",fname)
             self.robot.link(joint_name).q = np.deg2rad(joint_angle) # set joint angle [rad]
             if joint_idx+1 < self.joint_path.numJoints:
-                self.calc_whole_range_max_load_wrench(target_joint_name,joint_idx+1,is_instant=is_instant,
+                self.calc_whole_range_max_load_wrench(target_joint_name,coord_link_name,joint_idx+1,is_instant=is_instant,
                                                           do_plot=do_plot,save_plot=save_plot,fname=fname,save_model=save_model,show_model=show_model,
                                                           do_wait=do_wait,tm=tm)
             else:
-                self.calc_max_frame_load_wrench(target_joint_name,is_instant=is_instant,
+                self.calc_max_frame_load_wrench(target_joint_name,coord_link_name,is_instant=is_instant,
                                                     do_plot=do_plot,save_plot=save_plot,fname=fname,save_model=save_model,show_model=show_model,
                                                     do_wait=do_wait,tm=tm)
 
