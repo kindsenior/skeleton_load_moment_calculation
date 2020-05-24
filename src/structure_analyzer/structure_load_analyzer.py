@@ -175,65 +175,6 @@ class PlotInterface():
 
         if save_plot: plt.savefig(fname)
 
-def convert_to_frame_load_wrench_vertices(A_, B_):
-    num_joints = A_.shape[1]
-    load_dim = A_.shape[0]
-    try:
-        joint_order
-        if load_dim == 3:
-            max_tau_theta = max_tau[:load_dim].reshape(load_dim)
-        else:
-            max_tau_theta = max_tau
-    except NameError:
-        max_tau_theta = max_tau
-    # load_dim = 6 # needless?
-    # load_dim = 3 # needless?
-    # max_tau_theta = (max_tau/abs(A_.dot(A_.T))).min(axis=0) # tau_j = min_i(tau_i/|a_j.a_i|)
-    logger.debug("max_tau="+str(max_tau))
-    logger.debug("max_tau_theta=" + str(max_tau_theta))
-    # tau convex hull H->V
-    A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
-    b = np.vstack([max_tau_theta[:,np.newaxis],max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
-    try:
-        inmat, poly, retmat = h2v(A,b)
-    except RuntimeError:
-        logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
-        return np.array([range(6)])
-
-    logger.debug("max_tau")
-    logger.debug(retmat)
-    tau_vertices = np.array(retmat)[:,1:] # u_k^T
-
-    # convert to tau_tilde V->H
-    tau_tilde_vertices = tau_vertices.dot(B_.T) # u_k^~T
-    b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
-    try:
-        inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
-    except RuntimeError:
-        logger.error(Fore.RED+'!!!!!RuntimeError (v2h())!!!!!'+Style.RESET_ALL)
-        return np.array([range(6)])
-    logger.debug("tau_tilde")
-    logger.debug(retmat)
-    C = -np.array(retmat)[:,1:]
-    d = np.array(retmat)[:,0:1]
-    logger.debug("")
-
-    # H->V
-    # for max value
-    A = np.vstack([C.dot(A_), np.identity(load_dim), -np.identity(load_dim)])
-    b = np.vstack([d, max_value*np.ones(load_dim)[:,np.newaxis], max_value*np.ones(load_dim)[:,np.newaxis]])
-    try:
-        inmat, poly, retmat = h2v(A,b)
-    except RuntimeError:
-        logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
-        return np.array([range(6)])
-
-    logger.debug("final")
-    logger.debug(retmat)
-
-    n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
-    return n_vertices
-
 def skew(vec):
     return np.array([[0,-vec[2],vec[1]],
                      [vec[2],0,-vec[0]],
@@ -338,6 +279,53 @@ class JointLoadWrenchAnalyzer(object):
         for di in self.draw_interfaces:
             di.hide()
 
+    def __convert_to_frame_load_wrench_vertices(self, A_, B_):
+        num_joints = A_.shape[1]
+        load_dim = A_.shape[0]
+
+        # tau convex hull H->V
+        A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
+        b = np.vstack([self.max_tau_theta[:,np.newaxis],self.max_tau_theta[:,np.newaxis]]) # min_tau = - max_tau -> -min_tau = max_tau
+        try:
+            inmat, poly, retmat = h2v(A,b)
+        except RuntimeError:
+            logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
+            return np.array([range(6)])
+
+        logger.debug("max_tau")
+        logger.debug(retmat)
+        tau_vertices = np.array(retmat)[:,1:] # u_k^T
+
+        # convert to tau_tilde V->H
+        tau_tilde_vertices = tau_vertices.dot(B_.T) # u_k^~T
+        b_tilde = np.ones(tau_vertices.shape[0])[:,np.newaxis] # only hull (no cone)
+        try:
+            inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
+        except RuntimeError:
+            logger.error(Fore.RED+'!!!!!RuntimeError (v2h())!!!!!'+Style.RESET_ALL)
+            return np.array([range(6)])
+        logger.debug("tau_tilde")
+        logger.debug(retmat)
+        C = -np.array(retmat)[:,1:]
+        d = np.array(retmat)[:,0:1]
+        logger.debug("")
+
+        # H->V
+        # for max value
+        A = np.vstack([C.dot(A_), np.identity(load_dim), -np.identity(load_dim)])
+        b = np.vstack([d, max_value*np.ones(load_dim)[:,np.newaxis], max_value*np.ones(load_dim)[:,np.newaxis]])
+        try:
+            inmat, poly, retmat = h2v(A,b)
+        except RuntimeError:
+            logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
+            return np.array([range(6)])
+
+        logger.debug("final")
+        logger.debug(retmat)
+
+        n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
+        return n_vertices
+
     # calc frame load wrench vertices at current pose
     def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None, coord_link_name=None): # set joint name not joint index
         # self.robot_item.calcForwardKinematics()
@@ -371,10 +359,11 @@ class JointLoadWrenchAnalyzer(object):
         # A_t = np.diag([0,0,0, 1,1,1]).dot(Jre)
 
         axis_mat = A_theta[3:]
-        global max_tau
         # set tau_j to min_i(tau_i/|a_j.a_i|)
-        # max_tau = (self.max_tau/abs(axis_mat.T.dot(axis_mat))).min(axis=1) # with all joints
-        max_tau = (self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat))).min(axis=1) # with only intersecting joints
+        # self.max_tau_theta = (self.max_tau/abs(axis_mat.T.dot(axis_mat))).min(axis=1) # with all joints
+        self.max_tau_theta = (self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat))).min(axis=1) # with only intersecting joints
+        logger.debug("max_tau="+str(self.max_tau))
+        logger.debug("max_tau_theta=" + str(self.max_tau_theta))
 
         self.Jre = Jre
         self.Jri = Jri
@@ -383,7 +372,7 @@ class JointLoadWrenchAnalyzer(object):
         self.R2i = R2i
         self.A_theta = A_theta
 
-        return convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) ) # Ji~^T*R2, G^T-Ji~^T*Atheta*Si
+        return self.__convert_to_frame_load_wrench_vertices( Ji_tilde.transpose().dot(R2i), G.transpose()-Ji_tilde.transpose().dot(A_theta).dot(G.transpose()).dot(self.S) ) # Ji~^T*R2, G^T-Ji~^T*Atheta*Si
 
     def calc_instant_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
         return self.calc_max_frame_load_wrench(target_joint_name, coord_link_name=coord_link_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
