@@ -181,7 +181,9 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer(object):
-    def __init__(self, actuator_set_list_, joint_range_list=None, robot_item=None, robot_model_file=None, moment_colors=None, end_link_name="LLEG_JOINT5", step_angle_list=None, step_angle=10):
+    def __init__(self, actuator_set_list_, joint_range_list=None,
+                     robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", moment_colors=None,
+                     step_angle_list=None, step_angle=10, saturation_vec = None):
         self.world = jcu.World()
         logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
 
@@ -207,6 +209,9 @@ class JointLoadWrenchAnalyzer(object):
         self.load_dim = 6
 
         self.reset_max_min_wrench()
+
+        # self.saturation_vec = np.full((self.load_dim,), 10000) if saturation_vec is None else saturation_vec
+        self.saturation_vec = np.array([10000,10000,10000, 2000,2000,2000]) if saturation_vec is None else saturation_vec
 
         if self.world.is_choreonoid:
             self.tree_view = Base.ItemTreeView.instance
@@ -317,7 +322,7 @@ class JointLoadWrenchAnalyzer(object):
         # H->V
         # for max value
         A = np.vstack([C.dot(A_), np.identity(self.load_dim), -np.identity(self.load_dim)])
-        b = np.vstack([d, max_value*np.ones(load_dim)[:,np.newaxis], max_value*np.ones(load_dim)[:,np.newaxis]])
+        b = np.vstack([d, self.saturation_vec[:,np.newaxis], self.saturation_vec[:,np.newaxis]])
         try:
             inmat, poly, retmat = h2v(A,b)
         except RuntimeError:
@@ -395,8 +400,8 @@ class JointLoadWrenchAnalyzer(object):
         self.instant_min_load_wrench = n_vertices.min(axis=0)
         self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
         self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) < 10)] = 0
-        self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) >= max_value)] = np.inf # set |elements|>max_value to inf
-        self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) >= max_value)] = -np.inf
+        self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) >= self.saturation_vec)] = np.inf # set |elements|>saturation value to inf
+        self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) >= self.saturation_vec)] = -np.inf
 
         self.max_load_wrench = np.vstack([self.instant_max_load_wrench, self.max_load_wrench]).max(axis=0)
         self.min_load_wrench = np.vstack([self.instant_min_load_wrench, self.min_load_wrench]).min(axis=0)
@@ -447,8 +452,6 @@ class JointLoadWrenchAnalyzer(object):
                 self.calc_max_frame_load_wrench(target_joint_name,coord_link_name,is_instant=is_instant,
                                                     do_plot=do_plot,save_plot=save_plot,fname=fname,save_model=save_model,show_model=show_model,
                                                     do_wait=do_wait,tm=tm)
-
-max_value = 10000
 
 def initialize_plot_interface():
     global pi
