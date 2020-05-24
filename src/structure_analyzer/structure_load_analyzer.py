@@ -191,9 +191,9 @@ class JointLoadWrenchAnalyzer(object):
         self.draw_interfaces = None
         self.set_moment_colors(moment_colors=moment_colors)
 
-        self.axis_product_mat = functools.reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]])
+        self.axis_product_mat = functools.reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]]) # hard-coding the number of joints
 
-        self.joint_index_offsets = [0,0,0,3,6,6]
+        self.joint_index_offsets = [0,0,0,3,6,6] # hard-coding the number of joints
         # set max_tau in order from root using jointAxis
         max_tau_list = np.array([300,700,120, 0,700,0, 100,200,0]) # (hip-x,hip-y,hip-z,  nil,knee-y,nil, ankle-r,ankle-p)
         # max_tau_list = np.array([300,700,120, 0,700,0, 300,700,0]) # easy
