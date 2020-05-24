@@ -204,6 +204,8 @@ class JointLoadWrenchAnalyzer(object):
         if step_angle_list is None: step_angle_list = [step_angle]*self.joint_path.numJoints
         self.step_angle_list = step_angle_list
 
+        self.load_dim = 6
+
         self.reset_max_min_wrench()
 
         if self.world.is_choreonoid:
@@ -251,8 +253,8 @@ class JointLoadWrenchAnalyzer(object):
             [interface.setColor(color)  for interface,color in zip(self.draw_interfaces,self.moment_colors)]
 
     def reset_max_min_wrench(self):
-        self.max_load_wrench = np.zeros(6)
-        self.min_load_wrench = np.zeros(6)
+        self.max_load_wrench = np.zeros(self.load_dim)
+        self.min_load_wrench = np.zeros(self.load_dim)
 
     def set_draw_interfaces(self):
         self.draw_interfaces = [BodyUtil.DrawInterface(moment_color) for moment_color in self.moment_colors]
@@ -281,7 +283,6 @@ class JointLoadWrenchAnalyzer(object):
 
     def __convert_to_frame_load_wrench_vertices(self, A_, B_):
         num_joints = A_.shape[1]
-        load_dim = A_.shape[0]
 
         # tau convex hull H->V
         A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
@@ -290,7 +291,7 @@ class JointLoadWrenchAnalyzer(object):
             inmat, poly, retmat = h2v(A,b)
         except RuntimeError:
             logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
-            return np.array([range(6)])
+            return np.array([range(self.load_dim)])
 
         logger.debug("max_tau")
         logger.debug(retmat)
@@ -303,7 +304,7 @@ class JointLoadWrenchAnalyzer(object):
             inmat, poly, retmat = v2h(b_tilde, tau_tilde_vertices)
         except RuntimeError:
             logger.error(Fore.RED+'!!!!!RuntimeError (v2h())!!!!!'+Style.RESET_ALL)
-            return np.array([range(6)])
+            return np.array([range(self.load_dim)])
         logger.debug("tau_tilde")
         logger.debug(retmat)
         C = -np.array(retmat)[:,1:]
@@ -312,13 +313,13 @@ class JointLoadWrenchAnalyzer(object):
 
         # H->V
         # for max value
-        A = np.vstack([C.dot(A_), np.identity(load_dim), -np.identity(load_dim)])
+        A = np.vstack([C.dot(A_), np.identity(self.load_dim), -np.identity(self.load_dim)])
         b = np.vstack([d, max_value*np.ones(load_dim)[:,np.newaxis], max_value*np.ones(load_dim)[:,np.newaxis]])
         try:
             inmat, poly, retmat = h2v(A,b)
         except RuntimeError:
             logger.error(Fore.RED+'!!!!!RuntimeError (h2v())!!!!!'+Style.RESET_ALL)
-            return np.array([range(6)])
+            return np.array([range(self.load_dim)])
 
         logger.debug("final")
         logger.debug(retmat)
@@ -343,9 +344,9 @@ class JointLoadWrenchAnalyzer(object):
         diag_vec = np.array([i < target_link_idx + num_adjacent_actuator_set[1] + 1 for i in range(self.joint_path.numJoints)]) * np.array([i > target_link_idx - num_adjacent_actuator_set[0] for i in range(self.joint_path.numJoints)]).astype(np.int)
         self.S = 0.99 * np.diag(diag_vec)
 
-        Jre = np.ndarray((6,self.joint_path.numJoints)); Body.JointPath.getCustomPath(self.robot, root_link, end_link).calcJacobian(Jre) # root->end
-        Jri = np.ndarray((6,target_link_idx+1)); Body.JointPath.getCustomPath(self.robot, root_link, target_link).calcJacobian(Jri) # root->i
-        Jie = np.ndarray((6,self.joint_path.numJoints - Jri.shape[1])); Body.JointPath.getCustomPath(self.robot, target_link, end_link).calcJacobian(Jie) # i->end
+        Jre = np.ndarray((self.load_dim,self.joint_path.numJoints)); Body.JointPath.getCustomPath(self.robot, root_link, end_link).calcJacobian(Jre) # root->end
+        Jri = np.ndarray((self.load_dim,target_link_idx+1)); Body.JointPath.getCustomPath(self.robot, root_link, target_link).calcJacobian(Jri) # root->i
+        Jie = np.ndarray((self.load_dim,self.joint_path.numJoints - Jri.shape[1])); Body.JointPath.getCustomPath(self.robot, target_link, end_link).calcJacobian(Jie) # i->end
 
         R2i = np.r_[ np.c_[coord_link.R,np.zeros((3,3))],
                      np.c_[np.zeros((3,3)), coord_link.R] ]
