@@ -60,11 +60,10 @@ PROTO Segment [
 }
 
 PROTO CylinderLinkZ [
- exposedField    SFFloat    radius          0.05
- exposedField    SFFloat    height          0.1
+ exposedField    SFFloat    radius          0.07
  exposedField    SFVec3f    translation     0 0 0
  exposedField    SFRotation rotation        0 0 1 0
- exposedField    SFColor    diffuseColor    0 0 1 # blue
+ exposedField    SFColor    diffuseColor    0.3 0.5 1
  exposedField    SFColor    specularColor   1 1 1 # mirror white
  exposedField    MFNode     children        [ ]
 ]
@@ -74,13 +73,13 @@ PROTO CylinderLinkZ [
       rotation IS rotation
       children [
          Transform {
-            translation 0 0 -0.05
+            translation 0 0 0.015 # 0.03/2
             rotation 1 0 0 1.57079632679
             children [
                DEF JointZ Shape {
                   geometry Cylinder{
-                     radius IS radius
-                     height IS height
+                     radius 0.03
+                     height 0.03
                   }
                   appearance Appearance {
                      material Material {
@@ -88,6 +87,23 @@ PROTO CylinderLinkZ [
                         specularColor IS specularColor
                      }
                   }
+               }
+               Transform {
+                  translation 0 0.025 0 # 0.15 + 0.02/2
+                  children [
+                     DEF JointZ Shape {
+                        geometry Cylinder{
+                           radius IS radius
+                           height 0.02
+                        }
+                        appearance Appearance {
+                           material Material {
+                              diffuseColor IS diffuseColor
+                              specularColor IS specularColor
+                           }
+                        }
+                     }
+                  ]
                }
             ]
          }
@@ -413,8 +429,9 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-Y-X_Y_X-Y Humanoid {
           momentsOfInertia [1 0 0 0 1 0 0 0 1]
           children [
             DEF BODY_CYLINDER CylinderLinkZ {
+               radius 0.1
                translation 0 0 0
-               rotation 1 0 0 0
+               rotation 1 0 0 3.14159265359
                diffuseColor 0.5 0.5 0.5
             }
           ]
