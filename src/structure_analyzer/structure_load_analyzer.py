@@ -699,16 +699,21 @@ def export_drive_system_comparison():
 
     joint_range_list = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
 
-    joint_configuration_str="z-x-y_y_y-x"
+    global constructor_args
+    constructor_args = {}
+    constructor_args['joint_range_list'] = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
+    constructor_args['end_link_name'] = 'JOINT5'
+    constructor_args['robot_model_file'] = os.path.join(model_path,"universal-joint-robot_z-x-y_y_y-x.wrl")
+
+    global calc_args
+    calc_args = {'do_wait':False, 'tm':0, 'do_plot':True, 'save_plot':True}
+
     global analyzer0
-    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], **constructor_args)
     global analyzer1
-    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(0,0),(0,0),(0,0)], **constructor_args)
     global analyzer2
-    analyzer2 = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str+".wrl"))
+    analyzer2 = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], **constructor_args)
 
     if analyzer0.world.is_choreonoid:
         tree_view = Base.ItemTreeView.instance
@@ -726,16 +731,13 @@ def export_drive_system_comparison():
         index_str = "_"+str(idx).zfill(2)
 
         analyzer0.robot.angleVector(np.deg2rad(angle_vector))
-        analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system0"+"_load-region"+index_str+".png")
-        # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+        analyzer0.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_system0"+"_load-region"+index_str+".png", **calc_args)
 
         analyzer1.robot.angleVector(np.deg2rad(angle_vector))
-        analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system1"+"_load-region"+index_str+".png")
-        # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+        analyzer1.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_system1"+"_load-region"+index_str+".png", **calc_args)
 
         analyzer2.robot.angleVector(np.deg2rad(angle_vector))
-        analyzer2.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_system2"+"_load-region"+index_str+".png")
-        # logger.info(Fore.YELLOW+joint_configuration_str+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
+        analyzer2.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_system2"+"_load-region"+index_str+".png", **calc_args)
 
         if analyzer0.world.is_choreonoid:
             analyzer0.robot_item.notifyKinematicStateChange()
