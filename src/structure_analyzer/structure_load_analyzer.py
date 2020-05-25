@@ -181,7 +181,7 @@ def skew(vec):
                      [-vec[1],vec[0],0]])
 
 class JointLoadWrenchAnalyzer(object):
-    def __init__(self, actuator_set_list_, joint_range_list=None, max_tau_list=None,
+    def __init__(self, actuator_set_list_, joint_group_list=None, joint_range_list=None, max_tau_list=None,
                      robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", moment_colors=None,
                      step_angle_list=None, step_angle=10, saturation_vec = None):
         self.world = jcu.World()
@@ -193,9 +193,7 @@ class JointLoadWrenchAnalyzer(object):
         self.draw_interfaces = None
         self.set_moment_colors(moment_colors=moment_colors)
 
-        self.axis_product_mat = functools.reduce(lambda ret,vec: ret+np.array(vec).reshape(6,1)*np.array(vec), [np.zeros((6,6)),[1,1,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,1]]) # hard-coding the number of joints
-
-        self.joint_index_offsets = [0,0,0,3,6,6] # hard-coding the number of joints
+        self.apply_joint_group_list(joint_group_list)
 
         self.set_max_tau(max_tau_list)
 
@@ -246,6 +244,15 @@ class JointLoadWrenchAnalyzer(object):
         logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath.getCustomPath(self.robot, self.root_link, self.end_link)
 
+    def apply_joint_group_list(self, joint_group_list=None):
+        joint_group_list = [3,1,2] if joint_group_list is None else joint_group_list
+
+        self.axis_product_mat = np.zeros((self.joint_path.numJoints,self.joint_path.numJoints))
+        for s,g in zip([sum(joint_group_list[:idx]) for idx in range(len(joint_group_list))], joint_group_list): self.axis_product_mat[s:s+g,s:s+g] = 1
+        # eg) [[1,1,1,0,0,0],[1,1,1,0,0,0],[1,1,1,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,1],[0,0,0,0,1,1]] blocked diag matrix
+
+        self.joint_index_offsets = sum([[3*idx]*group_num for idx, group_num in enumerate(joint_group_list)], []) # eg) 6 dof leg: [0,0,0,3,6,6] (each joint group is 3 dof)
+
     # set max_tau in order from root using jointAxis
     # max_tau_list is in order of coordinate axes 'x,y,z'
     def set_max_tau(self, max_tau_list=None):
@@ -295,7 +302,7 @@ class JointLoadWrenchAnalyzer(object):
             di.hide()
 
     def __convert_to_frame_load_wrench_vertices(self, A_, B_):
-        num_joints = A_.shape[1]
+        num_joints = self.joint_path.numJoints
 
         # tau convex hull H->V
         A = np.vstack([np.identity(num_joints),-np.identity(num_joints)])
