@@ -201,6 +201,8 @@ class JointLoadWrenchAnalyzer(object):
 
         if step_angle_list is None: step_angle_list = [step_angle]*self.joint_path.numJoints
         self.step_angle_list = step_angle_list
+        if len(self.step_angle_list) != self.joint_path.numJoints:
+            raise RuntimeError('step_angle_list {0} must be the same length with JointPath {1}'.format(len(self.step_angle_list), self.joint_path.numJoints))
 
         self.load_dim = 6
 
@@ -243,9 +245,13 @@ class JointLoadWrenchAnalyzer(object):
         self.end_link = self.robot.link(end_link_name)
         logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath.getCustomPath(self.robot, self.root_link, self.end_link)
+        if self.joint_path.numJoints < 1: raise RuntimeError('JointPath length is 0 or less. Please set the valid names of a root link and an end link')
 
     def apply_joint_group_list(self, joint_group_list=None):
         joint_group_list = [3,1,2] if joint_group_list is None else joint_group_list
+
+        if sum(joint_group_list) != self.joint_path.numJoints:
+            raise RuntimeError('sum of joint_group_list {0} must be the same length with JointPath {1}'.format(sum(joint_group_list), self.joint_path.numJoints))
 
         self.axis_product_mat = np.zeros((self.joint_path.numJoints,self.joint_path.numJoints))
         for s,g in zip([sum(joint_group_list[:idx]) for idx in range(len(joint_group_list))], joint_group_list): self.axis_product_mat[s:s+g,s:s+g] = 1
