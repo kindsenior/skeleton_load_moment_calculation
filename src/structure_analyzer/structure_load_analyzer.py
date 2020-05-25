@@ -381,8 +381,8 @@ class JointLoadWrenchAnalyzer(object):
 
         axis_mat = A_theta[3:]
         # set tau_j to min_i(tau_i/|a_j.a_i|)
-        # self.max_tau_theta = (self.max_tau/abs(axis_mat.T.dot(axis_mat))).min(axis=1) # with all joints
-        self.max_tau_theta = (self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat))).min(axis=1) # with only intersecting joints
+        # self.max_tau_theta = np.nanmin(self.max_tau/abs(axis_mat.T.dot(axis_mat)), axis=1) # with all joints (excluding nan)
+        self.max_tau_theta = np.nanmin(self.max_tau/abs(self.axis_product_mat*axis_mat.T.dot(axis_mat)), axis=1) # with only intersecting joints (excluding nan)
         logger.debug("max_tau="+str(self.max_tau))
         logger.debug("max_tau_theta=" + str(self.max_tau_theta))
 
