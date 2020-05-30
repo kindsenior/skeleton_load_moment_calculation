@@ -1,0 +1,621 @@
+#VRML V2.0 utf8
+
+PROTO Joint [
+  exposedField     SFVec3f      center              0 0 0
+  exposedField     MFNode       children            []
+  exposedField     MFFloat      llimit              []
+  exposedField     MFFloat      lvlimit             []
+  exposedField     SFRotation   limitOrientation    0 0 1 0
+  exposedField     SFString     name                ""
+  exposedField     SFRotation   rotation            0 0 1 0
+  exposedField     SFVec3f      scale               1 1 1
+  exposedField     SFRotation   scaleOrientation    0 0 1 0
+  exposedField     MFFloat      stiffness           [ 0 0 0 ]
+  exposedField     SFVec3f      translation         0 0 0
+  exposedField     MFFloat      ulimit              []
+  exposedField     MFFloat      uvlimit             []
+  exposedField     MFFloat      climit              []
+  exposedField     SFString     jointType           ""
+  exposedField     SFInt32      jointId             -1
+  exposedField     SFVec3f      jointAxis           0 0 1
+
+  exposedField     SFFloat      gearRatio           1
+  exposedField     SFFloat      rotorInertia        0
+  exposedField     SFFloat      rotorResistor       0
+  exposedField     SFFloat      torqueConst         1
+  exposedField     SFFloat      encoderPulse        1
+]
+{
+  Transform {
+    center           IS center
+    children         IS children
+    rotation         IS rotation
+    scale            IS scale
+    scaleOrientation IS scaleOrientation
+    translation      IS translation
+  }
+}
+
+PROTO Segment [
+  field           SFVec3f     bboxCenter        0 0 0
+  field           SFVec3f     bboxSize          -1 -1 -1
+  exposedField    SFVec3f     centerOfMass      0 0 0
+  exposedField    MFNode      children          [ ]
+  exposedField    SFNode      coord             NULL
+  exposedField    MFNode      displacers        [ ]
+  exposedField    SFFloat     mass              0 
+  exposedField    MFFloat     momentsOfInertia  [ 0 0 0 0 0 0 0 0 0 ]
+  exposedField    SFString    name              ""
+  eventIn         MFNode      addChildren
+  eventIn         MFNode      removeChildren
+]
+{
+  Group {
+    addChildren    IS addChildren
+    bboxCenter     IS bboxCenter
+    bboxSize       IS bboxSize
+    children       IS children
+    removeChildren IS removeChildren
+  }
+}
+
+PROTO CylinderLinkZ [
+ exposedField    SFFloat    radius          0.07
+ exposedField    SFVec3f    translation     0 0 0
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    0.3 0.5 1
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0 0.015 # 0.03/2
+            rotation 1 0 0 1.57079632679
+            children [
+               DEF JointZ Shape {
+                  geometry Cylinder{
+                     radius 0.03
+                     height 0.03
+                  }
+                  appearance Appearance {
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
+                  }
+               }
+               Transform {
+                  translation 0 0.025 0 # 0.15 + 0.02/2
+                  children [
+                     DEF JointZ Shape {
+                        geometry Cylinder{
+                           radius IS radius
+                           height 0.02
+                        }
+                        appearance Appearance {
+                           material Material {
+                              diffuseColor IS diffuseColor
+                              specularColor IS specularColor
+                           }
+                        }
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}
+PROTO BoxLinkX [
+ exposedField    SFVec3f    size            0.1 0.1 0.1
+ exposedField    SFVec3f    translation     0 0 0
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    1 0 0 # red
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0 0
+            rotation 1 0 0 0
+            children [
+               DEF JointZ Shape {
+                  geometry Box {
+                     size IS size
+                  }
+                  appearance Appearance {
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
+                  }
+               }
+            ]
+         }
+      ]
+   }
+}
+
+PROTO BoxLinkZ [
+ exposedField    SFVec3f    size            0.1 0.1 0.1
+ exposedField    SFVec3f    translation     0 0 0.05
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    0.3 0.3 1 # blue
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0 0.05
+            rotation 1 0 0 0
+            children [
+               DEF JointZ Shape {
+                  geometry Box {
+                     size IS size
+                  }
+                  appearance Appearance {
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
+                  }
+               }
+            ]
+         }
+      ]
+   }
+}
+
+PROTO ForkLink [
+ exposedField    SFFloat    radius          0.04
+ exposedField    SFFloat    height          0.1
+ exposedField    SFFloat    thickness       0.02
+ exposedField    SFVec3f    sideBoxSize     0.06 0.02 0.1 # width thickness height
+ exposedField    SFVec3f    bottomBoxSize   0.06 0.14 0.02 # width length thickness
+ exposedField    SFVec3f    translation     0 0 0
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    1 0 0 # red
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0.06 0
+            rotation 1 0 0 0
+            children [
+               DEF Cylinder0 Shape {
+                  geometry Cylinder {
+                     radius IS radius
+                     height IS thickness
+                  }
+                  appearance Appearance {
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
+                  }
+               }
+               Transform {
+                  translation 0 0 -0.05
+                  children [
+                     DEF Box0 Shape {
+                        geometry Box {
+                           size IS sideBoxSize
+                        }
+                        appearance Appearance {
+                           material Material {
+                              diffuseColor IS diffuseColor
+                              specularColor IS specularColor
+                           }
+                        }
+                     }
+                  ]
+               }
+            ]
+         }
+         Transform {
+            translation 0 -0.06 0
+            rotation 1 0 0 0
+            children [
+               DEF Cylinder1 Shape {
+                  geometry Cylinder {
+                     radius IS radius
+                     height IS thickness
+                  }
+                  appearance Appearance {
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
+                  }
+               }
+               Transform {
+                  translation 0 0 -0.05
+                  children [
+                     DEF Box1 Shape {
+                        geometry Box {
+                           size IS sideBoxSize
+                        }
+                        appearance Appearance {
+                           material Material {
+                              diffuseColor IS diffuseColor
+                              specularColor IS specularColor
+                           }
+                        }
+                     }
+                  ]
+               }
+            ]
+         }
+         Transform {
+            translation 0 0 -0.09
+            children [
+               DEF BottomBox Shape { # bottom
+                  geometry Box {
+                     size IS bottomBoxSize
+                  }
+                  appearance Appearance {
+                     material Material {
+                        diffuseColor IS diffuseColor
+                        specularColor IS specularColor
+                     }
+                  }
+               }
+            ]
+         }
+      ]
+   }
+}
+
+PROTO ForkLinkX [
+ exposedField    SFFloat    radius          0.05
+ exposedField    SFFloat    height          0.1
+ exposedField    SFFloat    thickness       0.02
+ exposedField    SFVec3f    translation     0 0 0
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    1 0 0 # red
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0 0
+            rotation 1 1 0 3.14159265359
+            children [
+               DEF ForkLink0 ForkLink{
+                  radius IS radius
+                  height IS height
+                  thickness IS thickness
+                  diffuseColor IS diffuseColor
+                  specularColor IS specularColor
+               }
+            ]
+         }
+      ]
+   }
+}
+
+PROTO ForkLinkY [
+ exposedField    SFFloat    radius          0.05
+ exposedField    SFFloat    height          0.1
+ exposedField    SFFloat    thickness       0.02
+ exposedField    SFVec3f    translation     0 0 0
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    0 1 0 # green
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0 0
+            rotation 1 0 0 3.14159265359
+            children [
+               DEF ForkLink0 ForkLink{
+                  radius IS radius
+                  height IS height
+                  thickness IS thickness
+                  diffuseColor IS diffuseColor
+                  specularColor IS specularColor
+               }
+            ]
+         }
+      ]
+   }
+}
+
+PROTO ForkLinkZ [
+ exposedField    SFFloat    radius          0.05
+ exposedField    SFFloat    height          0.1
+ exposedField    SFFloat    thickness       0.02
+ exposedField    SFVec3f    translation     0 0 0
+ exposedField    SFRotation rotation        0 0 1 0
+ exposedField    SFColor    diffuseColor    0.3 0.3 1 # blue
+ exposedField    SFColor    specularColor   1 1 1 # mirror white
+ exposedField    MFNode     children        [ ]
+]
+{
+   Transform {
+      translation IS translation
+      rotation IS rotation
+      children [
+         Transform {
+            translation 0 0 0.1
+            rotation 1 0 0 0
+            children [
+               DEF ForkLink0 ForkLink{
+                  radius IS radius
+                  height IS height
+                  thickness IS thickness
+                  diffuseColor IS diffuseColor
+                  specularColor IS specularColor
+               }
+            ]
+         }
+      ]
+   }
+}
+
+PROTO Humanoid [
+  field           SFVec3f    bboxCenter            0 0 0
+  field           SFVec3f    bboxSize              -1 -1 -1
+  exposedField    SFVec3f    center                0 0 0
+  exposedField    MFNode     humanoidBody          [ ]
+  exposedField    MFString   info                  [ ]
+  exposedField    MFNode     joints                [ ]
+  exposedField    SFString   name                  ""
+  exposedField    SFRotation rotation              0 0 1 0
+  exposedField    SFVec3f    scale                 1 1 1
+  exposedField    SFRotation scaleOrientation      0 0 1 0
+  exposedField    MFNode     segments              [ ]
+  exposedField    MFNode     sites                 [ ]
+  exposedField    SFVec3f    translation           0 0 0
+  exposedField    SFString   version               "1.1"
+  exposedField    MFNode     viewpoints            [ ]
+]
+{
+  Transform {
+    bboxCenter       IS bboxCenter
+    bboxSize         IS bboxSize
+    center           IS center
+    rotation         IS rotation
+    scale            IS scale
+    scaleOrientation IS scaleOrientation
+    translation      IS translation
+    children [
+      Group {
+        children IS viewpoints
+      }
+      Group {
+        children IS humanoidBody 
+      }
+    ]
+  }
+}
+
+DEF UNIVERSAL-JOINT-ROBOT_X-Y-Z_Y_Z-Y-X Humanoid {
+  humanoidBody [
+    DEF WAIST Joint {
+      jointType "free"
+      jointAxis 0 0 0
+      translation 0 0 0
+      children [
+        DEF BODY Segment {
+          mass 1
+          centerOfMass 0 0 0
+          momentsOfInertia [1 0 0 0 1 0 0 0 1]
+          children [
+            DEF BODY_BOX ForkLinkX {
+               translation 0 0 0.1
+               rotation 1 0 0 3.14159265359
+            }
+          ]
+        } #Segment BODY
+        DEF JOINT0 Joint {
+           translation 0 0 0.1
+           rotation 0 0 1 0
+           jointId 0
+           jointType "rotate"
+           jointAxis 1 0 0
+           children [
+              DEF LINK0 Segment {
+                 mass 1
+                 centerOfMass 0 0 0
+                 momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                 children [
+                    DEF LINK0_BOX BoxLinkX {
+                       translation 0 0 0
+                       rotation 0 0 1 0
+                       diffuseColor 0.8 0.8 0
+                    }
+                 ]
+              } #Segment LINK0
+              DEF JOINT1 Joint {
+                 translation 0 0 0
+                 rotation 0 1 0 0
+                 jointId 1
+                 jointType "rotate"
+                 jointAxis 0 1 0
+                 children [
+                    DEF LINK1 Segment {
+                       mass 1
+                       centerOfMass 0 0 0
+                       momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                       children [
+                          DEF LINK1_FORK ForkLinkY {
+                             translation 0 0 0
+                             rotation 0 0 1 0
+                          }
+                       ]
+                    } #Segment LINK1
+                    DEF JOINT2 Joint {
+                       translation 0 0 0
+                       rotation 0 1 0 0
+                       jointId 2
+                       jointType "rotate"
+                       jointAxis 0 0 1
+                       children [
+                          DEF LINK2 Segment {
+                             mass 1
+                             centerOfMass 0 0 0
+                             momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                             children [
+                                DEF LINK2_FORK CylinderLinkZ {
+                                   translation 0 0 0.1
+                                   rotation 0 0 1 0
+                                }
+                                DEF LINK2_BOX BoxLinkX {
+                                   size 0.1 0.1 0.15
+                                   translation 0 0 0.225 # 0.1 + 0.05 + 0.15/2
+                                   rotation 0 0 1 0
+                                   diffuseColor 0.5 0.5 0.5
+                                }
+                                DEF LINK2_FORK ForkLinkY {
+                                   translation 0 0 0.4
+                                   rotation 0 1 0 3.14159265359
+                                }
+                             ]
+                          } #Segment LINK2
+                          DEF JOINT3 Joint {
+                             translation 0 0 0.4
+                             rotation 1 0 0 0
+                             jointId 3
+                             jointType "rotate"
+                             jointAxis 0 1 0
+                             children [
+                                DEF LINK3 Segment {
+                                   mass 1
+                                   centerOfMass 0 0 0
+                                   momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                                   children [
+                                      DEF LINK3_BOX BoxLinkX {
+                                         size 0.1 0.1 0.3 # 0.4 - 0.1 -0.05 + 0.05
+                                         translation 0 0 0.1 # 0.3/2 - 0.05
+                                         rotation 0 0 1 0
+                                         diffuseColor 0.5 0.5 0.5
+                                      }
+                                   ]
+                                } #Segment LINK3
+                                DEF JOINT4 Joint {
+                                   translation 0 0 0.4
+                                   rotation 1 0 0 0
+                                   jointId 4
+                                   jointType "rotate"
+                                   jointAxis 0 0 1
+                                   children [
+                                      DEF LINK4 Segment {
+                                         mass 1
+                                         centerOfMass 0 0 0
+                                         momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                                         children [
+                                            DEF LINK4_FORK CylinderLinkZ {
+                                               translation 0 0 -0.1
+                                               rotation 1 0 0 3.14159265359
+                                            }
+                                            DEF LINK4_FORK ForkLinkY {
+                                               translation 0 0 0
+                                               rotation 0 1 0 3.14159265359
+                                            }
+                                         ]
+                                      } #Segment LINK4
+                                      DEF JOINT5 Joint {
+                                         translation 0 0 0
+                                         rotation 1 0 0 0
+                                         jointId 5
+                                         jointType "rotate"
+                                         jointAxis 0 1 0
+                                         children [
+                                            DEF LINK5 Segment {
+                                               mass 1
+                                               centerOfMass 0 0 0
+                                               momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                                               children [
+                                                  DEF LINK5_BOX BoxLinkX {
+                                                     translation 0 0 0
+                                                     rotation 0 0 1 0
+                                                     diffuseColor 0.8 0.8 0
+                                                  }
+                                               ]
+                                            } #Segment LINK5
+                                            DEF JOINT6 Joint {
+                                               translation 0 0 0
+                                               rotation 1 0 0 0
+                                               jointId 6
+                                               jointType "rotate"
+                                               jointAxis 1 0 0
+                                               children [
+                                                  DEF LINK6 Segment {
+                                                     mass 1
+                                                     centerOfMass 0 0 0
+                                                     momentsOfInertia [1 0 0 0 1 0 0 0 1]
+                                                     children [
+                                                        DEF LINK6_FORK ForkLinkX {
+                                                           translation 0 0 0
+                                                           rotation 1 0 0 0
+                                                        }
+                                                     ]
+                                                  } #Segment LINK6
+                                               ]
+                                            } #Joint JOINT6
+                                         ]
+                                      } #Joint JOINT5
+                                   ]
+                                } #Joint JOINT4
+                             ]
+                          } #Joint JOINT3
+                       ]
+                    } #Joint JOINT2
+                 ]
+              } #Joint JOINT1
+           ]
+        } #Joint JOINT0
+      ]
+    } #Joint BODY
+  ]
+  joints [
+    USE BODY,
+    USE JOINT0,
+    USE JOINT1,
+    USE JOINT2,
+    USE JOINT3,
+    USE JOINT4,
+    USE JOINT5,
+    USE JOINT6,
+  ]
+  segments [
+    USE BODY,
+    USE LINK0,
+    USE LINK1,
+    USE LINK2,
+    USE LINK3,
+    USE LINK4,
+    USE LINK5,
+    USE LINK6,
+  ]
+  name "UNIVERSAL-JOINT-ROBOT_X-Y-Z_Y_Z-Y-X"
+  info [
+  ]
+}
