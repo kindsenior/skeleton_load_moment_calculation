@@ -591,6 +591,75 @@ def test_calculate_frame_load():
     analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_y-x.wrl"), **constructor_args)
     analyzer.calc_whole_range_max_load_wrench('JOINT2', **calc_args)
 
+def test_7dof_calculate_frame_load(target_link_name="JOINT2", coord_link_name=None, do_wait=False, do_plot=False, tm=0):
+    logger.critical(Fore.BLUE+"test_7dof_calcuate_frame_load()"+Style.RESET_ALL)
+    global analyzer
+
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
+
+    global constructor_args
+    constructor_args = {}
+
+    constructor_args["joint_group_list"] = [3,1,3]
+
+    # constructor_args["joint_range_list"] = [(0,180),(-180,120),(-90,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)]
+    constructor_args["joint_range_list"] = [(0, 90),(0,90), (0,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)]
+    # constructor_args["joint_range_list"] = [(90,90),(0,0),(0,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)] # only shoulder-z
+
+    constructor_args["max_tau_list"] = [200,190,100, 0,170,0, 45,45,100]
+
+    # constructor_args["step_angle_list"] = [360,10,10, 10, 360,360,360] # simplified test (The first joint has no effect)
+    # constructor_args["step_angle_list"] = [10,10,10, 10, 360,360,360]  # shoulder full range
+    # constructor_args["step_angle_list"] = [10,10,10, 10, 360,360,360]  # semi-full range
+    constructor_args["step_angle_list"] = [10,10,10, 10, 10,10,10]     # full range
+    # constructor_args["step_angle_list"] = [30,30,30, 30, 360,360,360]  # fast semi-full range
+    # constructor_args["step_angle_list"] = [30,30,30, 30, 30,30,30]     # fast full range
+
+    # constructor_args["saturation_vec"] = np.array([10000,10000,10000, 500,500,500])
+    constructor_args["saturation_vec"] = np.array([10000,10000,10000, 10000,10000,10000])
+
+    constructor_args["end_link_name"] ="JOINT6"
+
+    global calc_args
+    calc_args = {
+        "do_wait": do_wait,
+        "tm": tm,
+        "do_plot": do_plot,
+        }
+
+    # Serial rotary
+    logger.critical(Fore.BLUE+"Serial rotary drive joint"+Style.RESET_ALL)
+    joint_conf_array = [
+        ["x-y-z_y_x-y-z","x-y-z_y_y-x-z", "x-y-z_y_z-x-y","x-y-z_y_z-y-x"],
+        ["y-x-z_y_x-y-z","y-x-z_y_y-x-z", "y-x-z_y_z-x-y","y-x-z_y_z-y-x"],
+        ["z-x-y_y_x-y-z","z-x-y_y_y-x-z", "z-x-y_y_z-x-y","z-x-y_y_z-y-x"],
+        ["z-y-x_y_x-y-z","z-y-x_y_y-x-z", "z-y-x_y_z-x-y","z-y-x_y_z-y-x"],
+        ]
+    for joint_conf_row in joint_conf_array:
+        for joint_conf in joint_conf_row:
+            analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],
+                                                   robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_conf+".wrl"),
+                                                   **constructor_args)
+            analyzer.calc_whole_range_max_load_wrench(target_link_name, coord_link_name, **calc_args)
+        logger.critical("")
+
+    # Serial linear
+    logger.critical(Fore.BLUE+"Serial linear drive joint"+Style.RESET_ALL)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_z-y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench(target_link_name, coord_link_name, **calc_args)
+
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(1,0),(1,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_z-y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench(target_link_name, coord_link_name, **calc_args)
+
+    # Parallel linear
+    logger.critical(Fore.BLUE+"Parallel linear drive joint"+Style.RESET_ALL)
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_z-y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench(target_link_name, coord_link_name, **calc_args)
+
+    analyzer = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(1,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_z-y-x.wrl"), **constructor_args)
+    analyzer.calc_whole_range_max_load_wrench(target_link_name, coord_link_name, **calc_args)
+
 def export_overall_frame_load_region():
     logger.critical(Fore.BLUE+"export_overall_frame_load_region()"+Style.RESET_ALL)
 
