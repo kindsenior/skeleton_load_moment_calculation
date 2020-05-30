@@ -475,7 +475,11 @@ class JointLoadWrenchAnalyzer(object):
                                                     do_wait=do_wait,tm=tm)
 
         if joint_idx == 0:
-            logger.critical(Fore.YELLOW+re.search(r'([x-z][-_][x-z_-]+)', self.robot_model_file).group()+" max wrench: "+self.array_str(self.max_load_wrench[3:])+Style.RESET_ALL)
+            logger.critical(Fore.YELLOW
+                                +re.search(r'([x-z][-_][x-z_-]+)', self.robot_model_file).group()
+                                +" max wrench around "+target_joint_name+" (in "+coord_link_name+"): "
+                                +self.array_str(self.max_load_wrench[3:])
+                                +Style.RESET_ALL)
             if self.world.is_choreonoid:
                 self.tree_view.checkItem(self.robot_item, False)
                 self.message_view.flush()
