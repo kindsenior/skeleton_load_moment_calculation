@@ -187,11 +187,14 @@ class JointLoadWrenchAnalyzer(object):
         self.world = jcu.World()
         logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
 
-        self.actuator_set_list = actuator_set_list_
         self.set_robot(robot_item, robot_model_file)
         self.set_joint_path(end_link_name=end_link_name)
         self.draw_interfaces = None
         self.set_moment_colors(moment_colors=moment_colors)
+
+        self.actuator_set_list = actuator_set_list_
+        if len(self.actuator_set_list) != self.joint_path.numJoints:
+            raise RuntimeError('actuator_set_list {0} must be the same length with JointPath {1}'.format(len(self.actuator_set_list), self.joint_path.numJoints))
 
         self.apply_joint_group_list(joint_group_list)
 
