@@ -463,7 +463,7 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X-Z Humanoid {
           ]
         } #Segment BODY
         DEF JOINT0 Joint {
-           translation 0 0 0
+           translation 0 0 0.1
            rotation 0 0 1 0
            jointId 0
            jointType "rotate"
@@ -475,13 +475,13 @@ DEF UNIVERSAL-JOINT-ROBOT_Z-X-Y_Y_Y-X-Z Humanoid {
                  momentsOfInertia [1 0 0 0 1 0 0 0 1]
                  children [
                     DEF LINK0_FORKZ ForkLinkZ {
-                       translation 0 0 0
+                       translation 0 0 -0.1
                        rotation 0 0 1 1.57079632679
                     }
                  ]
               } #Segment LINK0
               DEF JOINT1 Joint {
-                 translation 0 0 0.1
+                 translation 0 0 0
                  rotation 0 1 0 0
                  jointId 1
                  jointType "rotate"
