@@ -353,8 +353,11 @@ class JointLoadWrenchAnalyzer(object):
         logger.debug("final")
         logger.debug(retmat)
 
-        n_vertices = np.array(retmat)[:,1:] # only hull (no cone)
-        return n_vertices
+        try:
+            return np.array(retmat)[:,1:] # only hull (no cone)
+        except IndexError:
+            logger.error(Fore.RED+'!!!!!IndexError of retmat!!!!!'+Style.RESET_ALL) # retmat is empty
+            return np.zeros((1,self.load_dim))
 
     # calc frame load wrench vertices at current pose
     def calc_current_load_wrench_vertices(self, target_link_name, root_link_name=None, end_link_name=None, coord_link_name=None): # set joint name not joint index
