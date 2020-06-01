@@ -608,16 +608,18 @@ def test_7dof_calculate_frame_load(target_link_name="JOINT2", coord_link_name=No
 
     constructor_args["joint_group_list"] = [3,1,3]
 
-    # constructor_args["joint_range_list"] = [(0,180),(-180,120),(-90,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)]
-    constructor_args["joint_range_list"] = [(0, 90),(0,90), (0,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)]
-    # constructor_args["joint_range_list"] = [(90,90),(0,0),(0,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)] # only shoulder-z
+    constructor_args["joint_range_list"] = [(0, 90),(0,90), (0,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,90)] # full range
 
     constructor_args["max_tau_list"] = [200,190,100, 0,170,0, 45,45,100]
 
-    # constructor_args["step_angle_list"] = [360,10,10, 10, 360,360,360] # simplified test (The first joint has no effect)
-    # constructor_args["step_angle_list"] = [10,10,10, 10, 360,360,360]  # shoulder full range
-    # constructor_args["step_angle_list"] = [10,10,10, 10, 360,360,360]  # semi-full range
-    constructor_args["step_angle_list"] = [10,10,10, 10, 10,10,10]     # full range
+    # constructor_args["step_angle_list"] = [360,10,10, 10, 360,360,360]  # simplified test (The first joint has no effect)
+    # constructor_args["step_angle_list"] = [360,10,10, 360, 360,360,360] # shoulder full range
+    # constructor_args["step_angle_list"] = [360,10,10, 10, 360,360,360]  # excluding wrist
+    # constructor_args["step_angle_list"] = [360,10,10, 10, 30,30,30]     # little fast full range
+    # constructor_args["step_angle_list"] = [360,10,10, 10, 20,20,20]
+
+    constructor_args["step_angle_list"] = [360,10,10, 10, 10,10,360]    # full range in effect
+
     # constructor_args["step_angle_list"] = [30,30,30, 30, 360,360,360]  # fast semi-full range
     # constructor_args["step_angle_list"] = [30,30,30, 30, 30,30,30]     # fast full range
 
