@@ -427,8 +427,10 @@ class JointLoadWrenchAnalyzer(object):
         self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) >= self.saturation_vec)] = np.inf # set |elements|>saturation value to inf
         self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) >= self.saturation_vec)] = -np.inf
 
+        tmp_max_load_moment = self.max_load_wrench[3:].copy()
         self.max_load_wrench = np.vstack([self.instant_max_load_wrench, self.max_load_wrench]).max(axis=0)
         self.min_load_wrench = np.vstack([self.instant_min_load_wrench, self.min_load_wrench]).min(axis=0)
+        if np.any(tmp_max_load_moment != self.max_load_wrench[3:]): logger.error(" max moment changed to "+str(self.max_load_wrench[3:])+" ("+joint_angle_text+")")
 
         ret_max_load_wrench,ret_min_load_wrench = [self.instant_max_load_wrench,self.instant_min_load_wrench] if is_instant else [self.max_load_wrench, self.min_load_wrench]
 
