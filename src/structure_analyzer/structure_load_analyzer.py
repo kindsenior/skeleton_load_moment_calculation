@@ -420,8 +420,8 @@ class JointLoadWrenchAnalyzer(object):
         logger.debug("n_vertices=")
         logger.debug(n_vertices[:,3:])
 
-        self.instant_max_load_wrench = n_vertices.max(axis=0)
-        self.instant_min_load_wrench = n_vertices.min(axis=0)
+        self.instant_max_load_wrench = n_vertices.max(axis=0).astype(np.float64)
+        self.instant_min_load_wrench = n_vertices.min(axis=0).astype(np.float64)
         self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) < 10)] = 0 # set |elements|<10 to 0
         self.instant_min_load_wrench[np.ma.where(abs(self.instant_min_load_wrench) < 10)] = 0
         self.instant_max_load_wrench[np.ma.where(abs(self.instant_max_load_wrench) >= self.saturation_vec)] = np.inf # set |elements|>saturation value to inf
