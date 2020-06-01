@@ -18,6 +18,8 @@ import scipy.linalg as linalg
 
 import cdd
 
+from enum import Enum
+
 import pprint, time, sys, os, re
 from colorama import Fore, Back, Style
 import functools
@@ -54,6 +56,10 @@ def v2h(flags,vertices):
         poly = cdd.Polyhedron(inmat)
     retmat = poly.get_inequalities()
     return inmat, poly, retmat
+
+class MomentType(Enum):
+    LINKCOORD = 0
+    ACTUATORAXIS = 1
 
 class PlotInterface():
     def __init__(self):
@@ -288,21 +294,35 @@ class JointLoadWrenchAnalyzer(object):
     def array_str(self, array):
         return str(np.where(array == np.inf, np.inf, array.astype(np.int)))
 
-    def draw_moment(self):
+    def draw_moment(self, moment_type=MomentType.ACTUATORAXIS, coord_link_name=None, axis_length=0.5, radius_size=0.0004):
+        self.hide_moment()
+        self.message_view.flush()
         E = np.eye(3)
-        R = self.robot.link(self.joint_path.joint(2).name).R
+        R = self.robot.link(self.joint_path.joint(2).name if coord_link_name is None else coord_link_name).R # default coord is joint(2)
         for idx,di in enumerate(self.draw_interfaces):
-            link = self.robot.link(self.joint_path.joint(idx).name)
-            # axis = link.R.dot(link.jointAxis)
-            axis = link.R.dot(link.a)
-            moment = R.dot(self.instant_max_load_wrench[3:])
-            tau = axis.dot(moment)
-            A = E - link.a
-            radius = (A[np.where(np.where(A>0,True,False).sum(axis=0))[0]][:]+link.a).sum(axis=0)
-            radius = link.R.dot(radius) # send in world frame
-            radius = 0.0004*radius*tau
-            axis = 0.5*axis
-            pos = link.p + np.array([0,0,0.1]) if idx is 0 else link.p # tmp
+            link = self.robot.link(self.joint_path.joint(idx).name) # tmp
+
+            if moment_type == MomentType.LINKCOORD :
+                axis = R[:,idx]
+
+                radius = R[:,(idx+1)%3]
+            elif moment_type == MomentType.ACTUATORAXIS:
+                # axis = link.R.dot(link.jointAxis)
+                axis = link.R.dot(link.a)
+
+                A = E - link.a
+                radius = (A[np.where(np.where(A>0,True,False).sum(axis=0))[0]][:]+link.a).sum(axis=0)
+                radius = link.R.dot(radius) # send in world frame
+            else:
+                Logger.error(Fore.RED+'!!! Not supported MomentType: {0}!!!'.format(moment_type)+Style.RESET_ALL)
+                return
+
+            moment = np.minimum( self.instant_max_load_wrench[3:], self.saturation_vec[3:] ) # saturation
+            tau = axis.dot(R.dot(moment))
+
+            radius = radius_size*radius*tau
+            axis = axis_length*axis
+            pos = link.p
             di.drawLineArcArrow(pos, radius, axis ,360, 0.1,60)
             di.show()
 
@@ -410,7 +430,8 @@ class JointLoadWrenchAnalyzer(object):
     def calc_instant_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", save_model=False, do_wait=False, tm=0.2):
         return self.calc_max_frame_load_wrench(target_joint_name, coord_link_name=coord_link_name, do_plot=do_plot, save_plot=save_plot, fname="", is_instant=True, do_wait=False, tm=0.2)
 
-    def calc_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", is_instant=True, save_model=False, show_model=False, do_wait=False, tm=0.2):
+    def calc_max_frame_load_wrench(self, target_joint_name, coord_link_name=None, do_plot=True, save_plot=False, fname="", is_instant=True,
+                                       save_model=False, show_model=False, moment_type=None, do_wait=False, tm=0.2):
         show_model |= save_model
 
         joint_angle_text = r'$\theta$: ' + str(np.rad2deg(self.robot.angleVector()).astype(np.int)) + ' [deg]' # round joint angles
@@ -442,6 +463,7 @@ class JointLoadWrenchAnalyzer(object):
         if show_model and self.world.is_choreonoid:
             self.robot_item.notifyKinematicStateChange()
             self.tree_view.checkItem(self.robot_item, True)
+            if moment_type: self.draw_moment(moment_type=moment_type, coord_link_name=coord_link_name)
             self.message_view.flush()
             head_fname = re.sub('[_0-9]*$',"",fname.replace(".png",""))
             if save_model: self.scene_widget.saveImage(str(fname.replace(head_fname,head_fname+"_pose")))
