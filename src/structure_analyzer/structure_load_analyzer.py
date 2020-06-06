@@ -254,7 +254,7 @@ class JointLoadWrenchAnalyzer(object):
         self.end_link = self.robot.link(end_link_name)
         logger.info("end link: "+str(end_link_name))
         self.joint_path = Body.JointPath.getCustomPath(self.robot, self.root_link, self.end_link)
-        if self.joint_path.numJoints < 1: raise RuntimeError('JointPath length is 0 or less. Please set the valid names of a root link and an end link')
+        if self.joint_path.numJoints < 1: raise RuntimeError('JointPath length ({}->{}) is 0 or less. Please set the valid names of a root link and an end link'.format(root_link_name, end_link_name))
 
     def apply_joint_group_list(self, joint_group_list=None):
         joint_group_list = [3,1,2] if joint_group_list is None else joint_group_list
