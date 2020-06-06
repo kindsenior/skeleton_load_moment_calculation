@@ -27,7 +27,7 @@ import pdb
 
 import roslib
 
-from cnoid import Body, Base, BodyUtil
+from cnoid import Body, Base, UtilPlugin
 
 from logger import *
 import jsk_choreonoid.util as jcu
@@ -289,7 +289,7 @@ class JointLoadWrenchAnalyzer(object):
         self.min_load_wrench = np.zeros(self.load_dim)
 
     def set_draw_interfaces(self):
-        self.draw_interfaces = [BodyUtil.DrawInterface(moment_color) for moment_color in self.moment_colors]
+        self.draw_interfaces = [UtilPlugin.DrawInterface(moment_color) for moment_color in self.moment_colors]
 
     def array_str(self, array):
         return str(np.where(array == np.inf, np.inf, array.astype(np.int)))
