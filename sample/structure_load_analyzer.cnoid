@@ -11,7 +11,7 @@ items:
       class: PythonScriptItem
       data: 
         file: "${PROJECT_DIR}/../src/structure_analyzer/structure_load_analyzer.py"
-        executionOnLoading: true
+        executionOnLoading: false
         backgroundExecution: false
 views: 
   - 
