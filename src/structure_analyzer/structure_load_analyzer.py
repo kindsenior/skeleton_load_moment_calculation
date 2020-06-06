@@ -458,7 +458,7 @@ class JointLoadWrenchAnalyzer(object):
         pi.max_moment_text.set_text('${}_{3}n_{\mathrm{ld}}$: ' + self.array_str(ret_max_load_wrench[3:]) + " [Nm]")
         logger.info(" max: " + str(ret_max_load_wrench))
         logger.info(" min: " + str(ret_min_load_wrench))
-        if do_plot: pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
+        if do_plot or save_plot : pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
 
         if show_model and self.world.is_choreonoid:
             self.robot_item.notifyKinematicStateChange()
