@@ -878,6 +878,114 @@ def export_drive_system_comparison():
         analyzer2.hide_moment()
         message_view.flush()
 
+def export_arm_comparison(target_link_name='JOINT2', coord_link_name=None, do_wait=False, tm=0.1, do_plot=False, show_model=True):
+    logger.critical(Fore.BLUE+"export_arm_comparison()"+Style.RESET_ALL)
+
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    model_path = os.path.join(package_path, "models")
+
+    # pi.set_max_display_num(400)
+    pi.set_max_display_num(600)
+    # pi.set_max_display_num(8000)
+
+    global constructor_args
+    constructor_args = {}
+
+    constructor_args['joint_group_list'] = [3,1,3]
+
+    # constructor_args['joint_range_list'] = [(0,180),(-180,120),(-90,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,0)] # actual range
+    constructor_args['joint_range_list'] = [(0, 90),(0,90), (0,90), (0,0),(0,90),(0,0) ,(0,80),(0,80),(0,80)]
+
+    # constructor_args['max_tau_list'] = [200,190,100, 0,170,0, 45,45,45] # almost same with 45,45,100
+    constructor_args['max_tau_list'] = [200,190,100, 0,170,0, 45,45,100]
+
+    # constructor_args['step_angle_list'] = [360,10,10, 360, 360,360,360]
+    constructor_args['step_angle_list'] = [360,10,10, 10, 360,360,360] # simplified test (The first joint has no effect)
+    # constructor_args['step_angle_list'] = [360,10,10, 10, 10,10,360] # full range in effect (same with fast)
+    # constructor_args['step_angle_list'] = [360,10,10, 10, 20,20,360] # fast full range in effect
+
+    # constructor_args['saturation_vec'] = np.array([10000,10000,10000, 500,500,500])
+    constructor_args['saturation_vec'] = np.array([10000,10000,10000, 1000,1000,1000])
+    # constructor_args['saturation_vec'] = np.array([10000,10000,10000, 10000,10000,10000])
+
+    constructor_args['end_link_name'] ='JOINT6'
+
+    global calc_args
+    calc_args = {
+        'do_wait': do_wait,
+        'tm': tm,
+        'do_plot': do_plot,
+        'show_model': show_model,
+        'moment_type': MomentType.LINKCOORD,
+        'save_plot': True,
+        }
+
+    global analyzer0
+    global analyzer1
+    global analyzer2
+    global analyzer3
+
+    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_x-y-z_y_z-y-x.wrl"), **constructor_args)
+    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_y-x-z_y_z-y-x.wrl"), **constructor_args)
+    analyzer2 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_z-y-x.wrl"), **constructor_args)
+    analyzer3 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_z-y-x.wrl"), **constructor_args)
+
+    global analyzer4
+    # analyzer4 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_y-x_z-y_z-x-y.wrl"), **constructor_args)
+    analyzer4 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_y-x_z-y_z-y-x.wrl"), **constructor_args)
+    # analyzer4 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_x-y_z-y_z-x-y.wrl"), **constructor_args)
+    # analyzer4 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_x-y_z-y_z-y-x.wrl"), **constructor_args)
+    # analyzer4.calc_whole_range_max_load_wrench('JOINT1', 'JOINT1', **calc_args)
+    # analyzer4.calc_whole_range_max_load_wrench('JOINT2', 'JOINT1', **calc_args)
+
+    # save image
+    common_fname=os.path.join(package_path,"shoulder-configuration-comparison","shoulder-configuration-comparison")
+    if analyzer1.world.is_choreonoid:
+        tree_view = Base.ItemTreeView.instance
+        message_view = Base.MessageView.instance
+        scene_widget = Base.SceneView.instance.sceneWidget
+
+        for analyzer in [analyzer0,analyzer1,analyzer2,analyzer3,analyzer4]: tree_view.checkItem(analyzer.robot_item, False) # hide all robots
+
+        # angle_vector_list = [np.deg2rad([0,90, 0, 10, 0,0,0]), np.deg2rad([0,90,90, 10, 0,0,0])]
+        angle_vector_list = [np.deg2rad([0,90, 0, 10, 0,0,0]), np.deg2rad([0,90,60, 10, 0,0,0])]
+        for idx,angle_vector in enumerate(angle_vector_list):
+            analyzer1.robot.angleVector(angle_vector)
+            analyzer1.calc_max_frame_load_wrench('JOINT2','JOINT2', fname=common_fname+"_shoulder-yaw_load-region_{}.png".format(idx), **calc_args)
+            # analyzer1.calc_max_frame_load_wrench('JOINT3','JOINT2')
+            tree_view.checkItem(analyzer1.robot_item, True)
+            tree_view.checkItem(analyzer4.robot_item, False)
+            analyzer4.hide_moment()
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_shoulder-yaw"+"_pose_{}.png".format(idx)))
+
+
+            analyzer4.robot.angleVector(angle_vector)
+            analyzer4.calc_max_frame_load_wrench('JOINT1','JOINT1', fname=common_fname+"_elbow-yaw_load-region_{}.png".format(idx), **calc_args)
+            # analyzer4.calc_max_frame_load_wrench('JOINT2','JOINT1')
+            tree_view.checkItem(analyzer1.robot_item, False)
+            tree_view.checkItem(analyzer4.robot_item, True)
+            analyzer1.hide_moment()
+            message_view.flush()
+            scene_widget.saveImage(str(common_fname+"_elbow-yaw"+"_pose_{}.png".format(idx)))
+
+    analyzer_list = []
+    # analyzer_list = [analyzer1]
+    # analyzer_list = [analyzer1, analyzer2, analyzer3]
+    # analyzer_list = [analyzer0, analyzer1, analyzer2, analyzer3]
+    for analyzer in analyzer_list:
+        # normal
+        logger.critical("normal")
+        analyzer.calc_whole_range_max_load_wrench('JOINT2', 'JOINT2', **calc_args) # around proximal
+        analyzer.calc_whole_range_max_load_wrench('JOINT3', 'JOINT2', **calc_args) # around distal
+
+        # # yaw joint shift
+        # logger.critical("yaw joint shift")
+        # analyzer.calc_whole_range_max_load_wrench('JOINT2', 'JOINT1', **calc_args) # around proximal
+        # analyzer.calc_whole_range_max_load_wrench('JOINT3', 'JOINT1', **calc_args) # around distal
+
+        logger.critical("")
+
 if __name__ == '__main__':
     init_config()
 
@@ -890,5 +998,7 @@ if __name__ == '__main__':
     export_joint_configuration_comparison()
 
     export_drive_system_comparison()
+
+    export_arm_comparison()
 
     # export_overall_frame_load_region()
