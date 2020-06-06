@@ -511,6 +511,15 @@ class JointLoadWrenchAnalyzer(object):
                 self.tree_view.checkItem(self.robot_item, False)
                 self.message_view.flush()
 
+def init_config():
+    global package_path
+    package_path = roslib.packages.get_pkg_dir("structure_analyzer")
+    global model_path
+    model_path = os.path.join(package_path, "models")
+
+    # valid only when executing from python console
+    os.system('cp {} {}'.format(os.path.join(package_path, 'config/Choreonoid.conf'), os.path.join(os.environ.get('HOME'),'.config/Choreonoid\ Inc.')))
+
 def initialize_plot_interface():
     global pi
     pi = PlotInterface()
@@ -870,6 +879,8 @@ def export_drive_system_comparison():
         message_view.flush()
 
 if __name__ == '__main__':
+    init_config()
+
     initialize_plot_interface()
 
     # test
