@@ -26,6 +26,7 @@ views:
     mounted: true
     state: 
       selected: [ 1 ]
+      checked: [ 1 ]
   - 
     id: 2
     plugin: Base
@@ -52,7 +53,7 @@ views:
       fog: true
       floorGrid: true
       floorGridSpan: 10
-      floorGridInterval: 0.5
+      floorGridInterval: 0.25
       xzGridSpan: 10
       xzGridInterval: 0.5
       xzGrid: false
@@ -76,7 +77,7 @@ views:
           fieldOfView: 0.698132
           near: 0.04
           far: 200
-          eye: [ 4.31995559, 1.4011954, 1.27461176 ]
+          eye: [ 2, 0.7, 0.4 ]
           direction: [ -0.949425485, -0.307950068, -0.0613025545 ]
           up: [ -0.0583118788, -0.0189136982, 0.99811923 ]
         - 
@@ -327,12 +328,12 @@ viewAreas:
     contents: 
       type: splitter
       orientation: horizontal
-      sizes: [ 438, 2069 ]
+      sizes: [ 100, 800 ]
       children: 
         - 
           type: splitter
           orientation: vertical
-          sizes: [ 741, 741 ]
+          sizes: [ 450, 450 ] # = 900
           children: 
             - 
               type: pane
@@ -345,12 +346,13 @@ viewAreas:
         - 
           type: splitter
           orientation: vertical
-          sizes: [ 1059, 423 ]
+          sizes: [ 6000, 300 ] # = 900
           children: 
             - 
               type: splitter
               orientation: horizontal
-              sizes: [ 914, 1151 ]
+              sizes: [ 200, 600 ]
+              # sizes: [ 600, 300 ]
               children: 
                 - 
                   type: pane
@@ -373,12 +375,12 @@ layoutOfToolBars:
       - { name: "SceneBar", x: 1056, priority: 0 }
       - { name: "GraphBar", x: 1337, priority: 0 }
       - { name: "SimulationBar", x: 1450, priority: 0 }
-      - { name: "BodyBar", x: 1659, priority: 0 }
-      - { name: "KinematicsBar", x: 1935, priority: 0 }
-      - { name: "BodyMotionGenerationBar", x: 2183, priority: 0 }
-      - { name: "RMControlBar", x: 2328, priority: 0 }
-      - { name: "SlideFrictionControlBar", x: 2423, priority: 0 }
     - 
       - { name: "MultiContactStabilizerBar", x: 0, priority: 0 }
       - { name: "PreviewControl", x: 94, priority: 0 }
       - { name: "CascadedControlBar", x: 263, priority: 0 }
+      - { name: "RMControlBar", x: 300, priority: 0 }
+      - { name: "SlideFrictionControlBar", x: 400, priority: 0 }
+      - { name: "BodyMotionGenerationBar", x: 500, priority: 0 }
+      - { name: "BodyBar", x: 700, priority: 0 }
+      - { name: "KinematicsBar", x: 1200, priority: 0 }
