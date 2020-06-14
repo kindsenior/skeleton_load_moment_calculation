@@ -4,12 +4,19 @@ for idx in $(seq 0 1)
 do
     pose=$package_dir/joint-configuration-comparison/joint-configuration-comparison_configuration${idx}_initial-pose.png
     pose_cut=${pose/pose/pose_cut}
-    convert $pose -crop "200x500+360+0" -quality 10 -resize 100% $pose_cut
+    convert $pose -crop "150x350+400+140" -quality 10 -resize 100% $pose_cut
 done
 
-crop_region="700x700+200+0"
-size="90%"
-for region0 in $package_dir/joint-configuration-comparison/*configuration0_load-region_*.png
+for idx in $(seq 0 1)
+do
+    pose=$package_dir/joint-configuration-comparison/joint-configuration-comparison_configuration${idx}_pose.png
+    pose_cut=${pose/pose/pose_cut}
+    convert $pose -crop "250x250+300+240" -quality 10 -resize 600 $pose_cut
+done
+
+crop_region="400x400+340+180"
+size="160%"
+for region0 in $package_dir/joint-configuration-comparison/*configuration0_load-region_[0-9]*.png
 do
     echo $region0
     # echo $pose0

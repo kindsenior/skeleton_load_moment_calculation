@@ -1,8 +1,15 @@
 package_dir=${0%/*}
 
-crop_region="620x620+200+0"
-size="90%"
-for region0 in $package_dir/drive-system-comparison/*system0_load-region_*.png
+for idx in $(seq 0 0)
+do
+    pose=$package_dir/drive-system-comparison/drive-system-comparison_system${idx}_pose.png
+    pose_cut=${pose/pose/pose_cut}
+    convert $pose -crop "300x300+400+230" -quality 10 -resize 700 $pose_cut
+done
+
+crop_region="400x400+340+180"
+size="160%"
+for region0 in $package_dir/drive-system-comparison/*system0_load-region_[0-9]*.png
 do
     echo $region0
     # echo $pose0
