@@ -152,6 +152,8 @@ class PlotInterface():
             logger.error(Fore.RED+'!QhullError!'+Style.RESET_ALL)
             return
 
+        # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
+        norm = plt.Normalize(vmax=1500, vmin=-1500)
         for idx, face_indices in enumerate(hull.simplices): # faces -> hull.simplices
             # logger.debug(str(idx)+" face: "+str(face_indices))
             x,y,z = self.vertices[face_indices,0], self.vertices[face_indices,1], self.vertices[face_indices,2]
@@ -165,10 +167,7 @@ class PlotInterface():
                 refiner = tri.UniformTriRefiner(triang)
                 new, new_z = refiner.refine_field(z, triinterpolator=tri.LinearTriInterpolator(triang,z), subdiv=2)
 
-                # norm = plt.Normalize(vmax=abs(y).max(), vmin=-abs(y).max())
-                norm = plt.Normalize(vmax=1500, vmin=-1500)
-                # kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3)
-                kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.1, alpha = 0.3, edgecolors='black')
+                kwargs = dict(triangles=new.triangles, cmap=cm.jet, norm=norm, linewidth=0.05, alpha = 0.3, edgecolors='black')
 
                 self.prev_surf_list.append(self.ax.plot_trisurf(new.x, new.y, new_z, **kwargs))
             except RuntimeError:
