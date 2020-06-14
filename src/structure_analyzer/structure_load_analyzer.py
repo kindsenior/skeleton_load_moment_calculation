@@ -344,7 +344,7 @@ class JointLoadWrenchAnalyzer(object):
             radius = radius_size*radius*tau
             axis = axis_length*axis
             pos = link.p
-            di.drawLineArcArrow(pos, radius, axis ,360, 0.1,60)
+            di.drawLineArcArrow(pos, radius, axis ,360, 0.1, 60, 0.5)
             di.show()
 
     def hide_moment(self):
