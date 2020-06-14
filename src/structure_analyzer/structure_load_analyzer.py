@@ -211,7 +211,7 @@ class JointLoadWrenchAnalyzer(object):
                      robot_item=None, robot_model_file=None, end_link_name="LLEG_JOINT5", moment_colors=None,
                      step_angle_list=None, step_angle=10, saturation_vec = None):
         self.world = jcu.World()
-        logger.info(" is_choreonoid:" + str(self.world.is_choreonoid))
+        logger.info(" is_choreonoid:" + str(jcu.is_choreonoid()))
 
         self.set_robot(robot_item, robot_model_file)
         self.set_joint_path(end_link_name=end_link_name)
@@ -240,7 +240,7 @@ class JointLoadWrenchAnalyzer(object):
         # self.saturation_vec = np.full((self.load_dim,), 10000) if saturation_vec is None else saturation_vec
         self.saturation_vec = np.array([10000,10000,10000, 2000,2000,2000]) if saturation_vec is None else saturation_vec
 
-        if self.world.is_choreonoid:
+        if jcu.is_choreonoid():
             self.tree_view = Base.ItemTreeView.instance
             self.message_view = Base.MessageView.instance
             self.scene_widget = Base.SceneView.instance.sceneWidget
@@ -250,7 +250,7 @@ class JointLoadWrenchAnalyzer(object):
         self.robot_item = robot_item
         self.robot_model_file = os.path.join(roslib.packages.get_pkg_dir("jsk_models"),"JAXON_RED/JAXON_REDmain.wrl") if robot_model_file is None else robot_model_file
         if self.robot_item is None:
-            if self.world.is_choreonoid: # in choreonoid
+            if jcu.is_choreonoid(): # in choreonoid
 
                 # not set RobotItem dupulicately
                 childItem = self.world.worldItem.childItem
@@ -480,7 +480,7 @@ class JointLoadWrenchAnalyzer(object):
         logger.info(" min: " + str(ret_min_load_wrench))
         if do_plot or save_plot : pi.plot_convex_hull(n_vertices[:,3:], save_plot=save_plot, fname=fname, isInstant=is_instant)
 
-        if show_model and self.world.is_choreonoid:
+        if show_model and jcu.is_choreonoid():
             self.robot_item.notifyKinematicStateChange()
             self.tree_view.checkItem(self.robot_item, True)
             if moment_type: self.draw_moment(moment_type=moment_type, coord_link_name=coord_link_name)
@@ -527,7 +527,7 @@ class JointLoadWrenchAnalyzer(object):
                                 +" max wrench around "+target_joint_name+(" (in "+coord_link_name+")" if coord_link_name is not None else "")+": "
                                 +self.array_str(self.max_load_wrench[3:])
                                 +Style.RESET_ALL)
-            if self.world.is_choreonoid:
+            if jcu.is_choreonoid():
                 self.tree_view.checkItem(self.robot_item, False)
                 self.message_view.flush()
 
@@ -991,29 +991,30 @@ def export_arm_comparison(target_link_name='JOINT2', coord_link_name=None, do_wa
 
     # save image
     common_fname=os.path.join(package_path,"shoulder-configuration-comparison","shoulder-configuration-comparison")
-    if analyzer1.world.is_choreonoid:
+    if jcu.is_choreonoid():
         tree_view = Base.ItemTreeView.instance
         message_view = Base.MessageView.instance
         scene_widget = Base.SceneView.instance.sceneWidget
 
         for analyzer in [analyzer0,analyzer1,analyzer2,analyzer3,analyzer4]: tree_view.checkItem(analyzer.robot_item, False) # hide all robots
 
-        # angle_vector_list = [np.deg2rad([0,90, 0, 10, 0,0,0]), np.deg2rad([0,90,90, 10, 0,0,0])]
-        angle_vector_list = [np.deg2rad([0,90, 0, 10, 0,0,0]), np.deg2rad([0,90,60, 10, 0,0,0])]
-        for idx,angle_vector in enumerate(angle_vector_list):
-            analyzer1.robot.angleVector(angle_vector)
-            analyzer1.calc_max_frame_load_wrench('JOINT2','JOINT2', fname=common_fname+"_shoulder-yaw_load-region_{}.png".format(idx), **calc_args)
-            # analyzer1.calc_max_frame_load_wrench('JOINT3','JOINT2')
+    # angle_vector_list = [np.deg2rad([0,90, 0, 10, 0,0,0]), np.deg2rad([0,90,90, 10, 0,0,0])]
+    angle_vector_list = [np.deg2rad([0,90, 0, 10, 0,0,0]), np.deg2rad([0,90,60, 10, 0,0,0])]
+    for idx,angle_vector in enumerate(angle_vector_list):
+        analyzer1.robot.angleVector(angle_vector)
+        analyzer1.calc_max_frame_load_wrench('JOINT2','JOINT2', fname=common_fname+"_shoulder-yaw_load-region_{}.png".format(idx), **calc_args)
+        # analyzer1.calc_max_frame_load_wrench('JOINT3','JOINT2')
+        if jcu.is_choreonoid():
             tree_view.checkItem(analyzer1.robot_item, True)
             tree_view.checkItem(analyzer4.robot_item, False)
             analyzer4.hide_moment()
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_shoulder-yaw"+"_pose_{}.png".format(idx)))
 
-
-            analyzer4.robot.angleVector(angle_vector)
-            analyzer4.calc_max_frame_load_wrench('JOINT1','JOINT1', fname=common_fname+"_elbow-yaw_load-region_{}.png".format(idx), **calc_args)
-            # analyzer4.calc_max_frame_load_wrench('JOINT2','JOINT1')
+        analyzer4.robot.angleVector(angle_vector)
+        analyzer4.calc_max_frame_load_wrench('JOINT1','JOINT1', fname=common_fname+"_elbow-yaw_load-region_{}.png".format(idx), **calc_args)
+        # analyzer4.calc_max_frame_load_wrench('JOINT2','JOINT1')
+        if jcu.is_choreonoid():
             tree_view.checkItem(analyzer1.robot_item, False)
             tree_view.checkItem(analyzer4.robot_item, True)
             analyzer1.hide_moment()
