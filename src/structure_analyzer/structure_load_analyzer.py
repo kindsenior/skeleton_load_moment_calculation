@@ -23,7 +23,6 @@ from enum import Enum
 import pprint, time, sys, os, re
 from colorama import Fore, Back, Style
 import functools
-import pdb
 
 import roslib
 
@@ -32,6 +31,11 @@ from cnoid import Body, Base, UtilPlugin
 from logger import *
 import jsk_choreonoid.util as jcu
 import jsk_choreonoid.body_util
+
+if jcu.is_choreonoid():
+    import pdb as ipdb
+else:
+    import ipdb
 
 def h2v(A,b):
     try:
