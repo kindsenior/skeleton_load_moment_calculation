@@ -131,6 +131,7 @@ class PlotInterface():
 
         for surf in self.prev_surf_list: surf.remove()
         self.prev_surf_list = []
+        self.ax.lines.clear() # clear edge plots
 
         if isInstant or self.vertices is None: # reset vertices for instant frame load moment
             self.vertices = vertices
@@ -179,6 +180,22 @@ class PlotInterface():
             # x,y,z = [np.append(vec,vec[2]).reshape((2,2)) for vec in [x,y,z]]
             # logger.debug("x,y,z=\n "+str(x)+",\n "+str(y)+",\n "+str(z))
             # self.ax.plot_surface(x,y,z,alpha = 0.3)
+
+        # plot edges
+        kwargs = dict(linewidth=2.0, alpha = 0.9, color='black')
+        face_pair_set = set([tuple(set((face_idx, neighbor_idx))) for face_idx, neighbor_indices in enumerate(hull.neighbors) for neighbor_idx in neighbor_indices])
+        for face_idx0, face_idx1 in face_pair_set:
+            face_vertices0 = hull.simplices[face_idx0]
+            face_vertices1 = hull.simplices[face_idx1]
+            edge_idx0, edge_idx1 = tuple( set(face_vertices0) & set(face_vertices1) )
+            face0_normal = np.cross(hull.points[face_vertices0[1]] - hull.points[face_vertices0[0]], hull.points[face_vertices0[2]] - hull.points[face_vertices0[0]])
+            face1_normal = np.cross(hull.points[face_vertices1[1]] - hull.points[face_vertices1[0]], hull.points[face_vertices1[2]] - hull.points[face_vertices1[0]])
+            face0_normal /= np.linalg.norm(face0_normal)
+            face1_normal /= np.linalg.norm(face1_normal)
+
+            edge_vertices = hull.points[edge_idx0:edge_idx1+1:edge_idx1-edge_idx0,:]
+            if abs(face0_normal.dot(face1_normal)) < 0.999:
+                self.ax.plot(edge_vertices[:,0], edge_vertices[:,1], edge_vertices[:,2], **kwargs)
 
         # plt.show()
         plt.pause(0.01)
