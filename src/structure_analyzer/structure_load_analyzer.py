@@ -782,6 +782,21 @@ def export_joint_configuration_comparison():
             message_view.flush()
             scene_widget.saveImage(str(common_fname+"_configuration1"+"_initial-pose.png"))
 
+    # pose for figure
+    analyzer0.robot.angleVector(np.deg2rad(np.array([90,0,-80,70,0,0])))
+    analyzer0.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_configuration0_load-region_org.png", **calc_args)
+    analyzer1.robot.angleVector(np.deg2rad(np.array([90,-80,0,70,0,0])))
+    analyzer1.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_configuration1_load-region_org.png", **calc_args)
+    if analyzer0.world.is_choreonoid:
+        tree_view.checkItem(analyzer0.robot_item, True)
+        tree_view.checkItem(analyzer1.robot_item, False)
+        message_view.flush()
+        scene_widget.saveImage(str(common_fname+"_configuration0_pose.png"))
+        tree_view.checkItem(analyzer0.robot_item, False)
+        tree_view.checkItem(analyzer1.robot_item, True)
+        message_view.flush()
+        scene_widget.saveImage(str(common_fname+"_configuration1_pose.png"))
+
     l_angle = np.array([0,-70,0,20,0,0])
     u_angle = np.array([90,5,-80,120,0,0])
     analyzer1.robot.angleVector(np.deg2rad(l_angle[[0,2,1,3,4,5]]))
@@ -851,15 +866,27 @@ def export_drive_system_comparison():
     global analyzer2
     analyzer2 = JointLoadWrenchAnalyzer([(0,0),(0,0),(2,0),(0,0),(0,0),(0,0)], **constructor_args)
 
+    common_fname=os.path.join(package_path,"drive-system-comparison","drive-system-comparison")
+
     if analyzer0.world.is_choreonoid:
         tree_view = Base.ItemTreeView.instance
         message_view = Base.MessageView.instance
         scene_widget = Base.SceneView.instance.sceneWidget
         tree_view.checkItem(analyzer0.robot_item, True)
 
+    # pose for figure
+    figure_angle_vector = np.array([70,-30,20,70,0,0])
+    analyzer0.robot.angleVector(np.deg2rad(figure_angle_vector))
+    analyzer0.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_system0_load-region_org.png", **calc_args)
+    analyzer1.robot.angleVector(np.deg2rad(figure_angle_vector))
+    analyzer1.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_system1_load-region_org.png", **calc_args)
+    analyzer2.robot.angleVector(np.deg2rad(figure_angle_vector))
+    analyzer2.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_system2_load-region_org.png", **calc_args)
+    if analyzer0.world.is_choreonoid:
+        scene_widget.saveImage(str(common_fname+"_system0_pose.png"))
+
     l_angle = np.array([30,-70,-40,50,0,0])
     u_angle = np.array([120,0,80,-90,0,0])
-    common_fname=os.path.join(package_path,"drive-system-comparison","drive-system-comparison")
     division_num = 20
     angle_vectors = np.vstack([np.linspace(l_angle,u_angle,division_num,endpoint=True), np.linspace(u_angle,l_angle,division_num,endpoint=True)])
     for idx, angle_vector in enumerate(angle_vectors):
