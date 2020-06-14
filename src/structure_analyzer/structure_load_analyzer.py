@@ -746,16 +746,18 @@ def export_joint_configuration_comparison():
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
-    joint_range_list = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
+    global constructor_args
+    constructor_args = {}
+    constructor_args['joint_range_list'] = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
+    constructor_args['end_link_name'] = 'JOINT5'
+
+    global calc_args
+    calc_args = {'do_wait':False, 'tm':0, 'do_plot':True, 'save_plot':True}
 
     global analyzer0
-    joint_configuration_str0="z-x-y_y_y-x"
-    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str0+".wrl"))
+    analyzer0 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-x-y_y_y-x.wrl"), **constructor_args)
     global analyzer1
-    joint_configuration_str1="z-y-x_y_y-x"
-    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], joint_range_list=joint_range_list,
-                                        end_link_name="JOINT5", robot_model_file=os.path.join(model_path,"universal-joint-robot_"+joint_configuration_str1+".wrl"))
+    analyzer1 = JointLoadWrenchAnalyzer([(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)], robot_model_file=os.path.join(model_path,"universal-joint-robot_z-y-x_y_y-x.wrl"), **constructor_args)
     target_end = analyzer0.joint_path.endLink
 
     common_fname=os.path.join(package_path,"joint-configuration-comparison","joint-configuration-comparison")
@@ -766,8 +768,8 @@ def export_joint_configuration_comparison():
         scene_widget = Base.SceneView.instance.sceneWidget
 
     analyzer0.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
-    analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_initial-pose_load-region.png")
-    logger.critical(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
+    analyzer0.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_initial-pose_load-region.png", **calc_args)
+    logger.critical(Fore.YELLOW+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
     analyzer1.robot.angleVector(np.deg2rad(np.array([0,0,0,0,0,0])))
     if analyzer0.world.is_choreonoid:
             analyzer0.robot_item.notifyKinematicStateChange()
@@ -792,12 +794,12 @@ def export_joint_configuration_comparison():
 
         analyzer0.robot.angleVector(np.deg2rad(angle_vector))
         # FK is called in calc_max_frame_load_wrench
-        analyzer0.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration0"+"_load-region"+index_str+".png")
+        analyzer0.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_configuration0"+"_load-region"+index_str+".png", **calc_args)
         # logger.info(Fore.YELLOW+joint_configuration_str0+" max wrench: "+str(analyzer0.max_load_wrench)+Style.RESET_ALL)
 
         H = np.vstack([ np.hstack([target_end.R, np.array([target_end.p]).T]), np.array([[0,0,0,1]]) ])
         logger.info("IK: " + str(analyzer1.joint_path.calcInverseKinematics(H)))
-        analyzer1.calc_max_frame_load_wrench('JOINT2', do_wait=False, tm=0, do_plot=True, save_plot=True, fname=common_fname+"_configuration1"+"_load-region"+index_str+".png")
+        analyzer1.calc_max_frame_load_wrench('JOINT2', fname=common_fname+"_configuration1"+"_load-region"+index_str+".png", **calc_args)
         # logger.info(Fore.YELLOW+joint_configuration_str1+" max wrench: "+str(analyzer1.max_load_wrench)+Style.RESET_ALL)
 
         if analyzer0.world.is_choreonoid:
