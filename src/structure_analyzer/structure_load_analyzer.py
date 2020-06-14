@@ -746,6 +746,8 @@ def export_joint_configuration_comparison():
     package_path = roslib.packages.get_pkg_dir("structure_analyzer")
     model_path = os.path.join(package_path, "models")
 
+    pi.set_max_display_num(800)
+
     global constructor_args
     constructor_args = {}
     constructor_args['joint_range_list'] = [(35,35),(100,100),(20,20), (0,0),(0,0),(0,0) ,(0,0),(0,0),(0,0)]
@@ -776,11 +778,11 @@ def export_joint_configuration_comparison():
             tree_view.checkItem(analyzer0.robot_item, True)
             tree_view.checkItem(analyzer1.robot_item, False)
             message_view.flush()
-            scene_widget.saveImage(str(common_fname+"_configuration0"+"_initial-pose.png"))
+            scene_widget.saveImage(str(common_fname+"_configuration0_initial-pose.png"))
             tree_view.checkItem(analyzer0.robot_item, False)
             tree_view.checkItem(analyzer1.robot_item, True)
             message_view.flush()
-            scene_widget.saveImage(str(common_fname+"_configuration1"+"_initial-pose.png"))
+            scene_widget.saveImage(str(common_fname+"_configuration1_initial-pose.png"))
 
     # pose for figure
     analyzer0.robot.angleVector(np.deg2rad(np.array([90,0,-80,70,0,0])))
