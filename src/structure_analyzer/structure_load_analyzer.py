@@ -967,7 +967,6 @@ def export_arm_comparison(target_link_name='JOINT2', coord_link_name=None, do_wa
         'tm': tm,
         'do_plot': do_plot,
         'show_model': show_model,
-        'moment_type': MomentType.LINKCOORD,
         'save_plot': True,
         }
 
